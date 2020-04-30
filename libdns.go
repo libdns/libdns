@@ -1,3 +1,17 @@
+// Package libdns defines the core interfaces that should be implemented
+// by DNS provider clients. They are small and idiomatic Go interfaces with
+// well-defined semantics.
+//
+// All interface implementations must be safe for concurrent/parallel use.
+// For example, if AppendRecords() is called at the same time and two API
+// requests are made to the provider at the same time, the result of both
+// requests must be visible after they both complete; if the provider does
+// not synchronize the writing of the zone file and one request overwrites
+// the other, then the client implementation must take care to synchronize
+// on behalf of the incompetent provider. This synchronization need not be
+// global, for example: the scope of synchronization might only need to be
+// within the same zone, allowing multiple requests at once as long as all
+// of them are for different zones. (Exact logic depends on the provider.)
 package libdns
 
 import (
@@ -9,7 +23,8 @@ import (
 type RecordGetter interface {
 	// GetRecords returns all the records in the DNS zone.
 	//
-	// Implementations must honor context cancellation.
+	// Implementations must honor context cancellation and be safe for
+	// concurrent use.
 	GetRecords(ctx context.Context, zone string) ([]Record, error)
 }
 
@@ -19,7 +34,8 @@ type RecordAppender interface {
 	// and returns the populated records that were created. It never
 	// changes existing records.
 	//
-	// Implementations must honor context cancellation.
+	// Implementations must honor context cancellation and be safe for
+	// concurrent use.
 	AppendRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
 }
 
@@ -36,7 +52,8 @@ type RecordSetter interface {
 	// method may use what information is given to do lookups and will
 	// ensure that only necessary changes are made to the zone.
 	//
-	// Implementations must honor context cancellation.
+	// Implementations must honor context cancellation and be safe for
+	// concurrent use.
 	SetRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
 }
 
@@ -50,7 +67,8 @@ type RecordDeleter interface {
 	// may use what information is given to do lookups and delete only
 	// matching records.
 	//
-	// Implementations must honor context cancellation.
+	// Implementations must honor context cancellation and be safe for
+	// concurrent use.
 	DeleteRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
 }
 
