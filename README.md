@@ -1,5 +1,7 @@
-libdns - Universal DNS provider APIs for Go <a href="https://pkg.go.dev/github.com/libdns/libdns"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"></a>
+libdns - Universal DNS provider APIs for Go
 ===========================================
+
+<a href="https://pkg.go.dev/github.com/libdns/libdns"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"></a>
 
 `libdns` is a collection of free-range DNS provider client implementations written in Go! With libdns packages, your Go program can manage DNS records across any supported providers.
 
