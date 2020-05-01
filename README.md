@@ -16,7 +16,15 @@ The interfaces include:
 - `RecordSetter` to set (create or change existing) records.
 - `RecordDeleter` to delete records.
 
-## Related projects
+
+## Implementing new providers
+
+Providers are 100% written and maintained by the community! We all maintain just the packages for providers we use.
+
+**[Instructions for adding new providers](https://github.com/libdns/libdns/wiki/Implementing-providers)** are on this repo's wiki. Please feel free to contribute.
+
+
+## Similar projects
 
 **[OctoDNS](https://github.com/github/octodns)** is a suite of tools written in Python for managing DNS. However, its approach is a bit heavy-handed when all you need are small, incremental changes to a zone:
 
