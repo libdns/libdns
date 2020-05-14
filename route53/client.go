@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/route53"
 	r53 "github.com/aws/aws-sdk-go/service/route53"
 	"github.com/libdns/libdns"
 )
@@ -38,7 +37,7 @@ func (p *Provider) getRecords(ctx context.Context, zoneID string) ([]libdns.Reco
 	}
 
 	var records []libdns.Record
-	var recordSets []*route53.ResourceRecordSet
+	var recordSets []*r53.ResourceRecordSet
 
 	for {
 		getRecordResult, err := p.client.ListResourceRecordSetsWithContext(ctx, getRecordsInput)
