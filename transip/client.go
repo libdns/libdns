@@ -9,22 +9,24 @@ import (
 	"github.com/libdns/libdns"
 )
 
-// NewSession initializes the AWS client
-func (p *Provider) NewSession() error {
-	client, err := gotransip.NewClient(gotransip.ClientConfiguration{
-		AccountName:	p.AccountName,
-		PrivateKeyPath:	p.PrivateKeyPath,
-	})
-	if err != nil {
-		return err
+func (p *Provider) setupRepository() error {
+	if p.repository == nil {
+		client, err := gotransip.NewClient(gotransip.ClientConfiguration{
+			AccountName:	p.AccountName,
+			PrivateKeyPath:	p.PrivateKeyPath,
+		})
+		if err != nil {
+			return err
+		}
+		p.repository = transipdomain.Repository{Client: client}
 	}
-
-	p.repository = transipdomain.Repository{Client: client}
 
 	return nil
 }
 
 func (p *Provider) getDNSEntries(ctx context.Context, domain string) ([]libdns.Record, error) {
+	p.setupRepository()
+
 	var records []libdns.Record
 	var dnsEntries []transipdomain.DNSEntry
 
@@ -47,6 +49,8 @@ func (p *Provider) getDNSEntries(ctx context.Context, domain string) ([]libdns.R
 }
 
 func (p *Provider) addDNSEntry(ctx context.Context, domain string, record libdns.Record) (libdns.Record, error) {
+	p.setupRepository()
+
 	entry := transipdomain.DNSEntry{
 		Name:    record.Name,
 		Content: record.Value,
@@ -63,6 +67,8 @@ func (p *Provider) addDNSEntry(ctx context.Context, domain string, record libdns
 }
 
 func (p *Provider) removeDNSEntry(ctx context.Context, domain string, record libdns.Record) (libdns.Record, error) {
+	p.setupRepository()
+
 	entry := transipdomain.DNSEntry{
 		Name:    record.Name,
 		Content: record.Value,
@@ -79,6 +85,8 @@ func (p *Provider) removeDNSEntry(ctx context.Context, domain string, record lib
 }
 
 func (p *Provider) updateDNSEntry(ctx context.Context, domain string, record libdns.Record) (libdns.Record, error) {
+	p.setupRepository()
+
 	entry := transipdomain.DNSEntry{
 		Name:    record.Name,
 		Content: record.Value,
@@ -93,5 +101,3 @@ func (p *Provider) updateDNSEntry(ctx context.Context, domain string, record lib
 
 	return record, nil
 }
-
-
