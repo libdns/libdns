@@ -10,9 +10,6 @@ import (
 )
 
 func (p *Provider) setupRepository() error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
 	if p.repository == nil {
 		client, err := gotransip.NewClient(gotransip.ClientConfiguration{
 			AccountName:	p.AccountName,
