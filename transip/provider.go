@@ -3,6 +3,7 @@ package transip
 import (
 	"context"
 	"time"
+	"sync"
 
 	"github.com/libdns/libdns"
 	transipdomain "github.com/transip/gotransip/domain"
@@ -13,6 +14,7 @@ type Provider struct {
 	AccountName    string `json:"account_name"`
 	PrivateKeyPath string `json:"private_key_path"`
 	repository     transipdomain.Repository
+	mutex          sync.Mutex
 }
 
 // GetRecords lists all the records in the zone.

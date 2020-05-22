@@ -10,6 +10,9 @@ import (
 )
 
 func (p *Provider) setupRepository() error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	if p.repository == nil {
 		client, err := gotransip.NewClient(gotransip.ClientConfiguration{
 			AccountName:	p.AccountName,
@@ -25,6 +28,9 @@ func (p *Provider) setupRepository() error {
 }
 
 func (p *Provider) getDNSEntries(ctx context.Context, domain string) ([]libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	p.setupRepository()
 
 	var records []libdns.Record
@@ -49,6 +55,9 @@ func (p *Provider) getDNSEntries(ctx context.Context, domain string) ([]libdns.R
 }
 
 func (p *Provider) addDNSEntry(ctx context.Context, domain string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	p.setupRepository()
 
 	entry := transipdomain.DNSEntry{
@@ -67,6 +76,9 @@ func (p *Provider) addDNSEntry(ctx context.Context, domain string, record libdns
 }
 
 func (p *Provider) removeDNSEntry(ctx context.Context, domain string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	p.setupRepository()
 
 	entry := transipdomain.DNSEntry{
@@ -85,6 +97,9 @@ func (p *Provider) removeDNSEntry(ctx context.Context, domain string, record lib
 }
 
 func (p *Provider) updateDNSEntry(ctx context.Context, domain string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	p.setupRepository()
 
 	entry := transipdomain.DNSEntry{
