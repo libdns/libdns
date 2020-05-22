@@ -41,8 +41,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 	return appendedRecords, nil
 }
 
-// DeleteRecords deletes the records from the zone. If a record does not have an ID,
-// it will be looked up. It returns the records that were deleted.
+// DeleteRecords deletes the records from the zone.
 func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
 	var deletedRecords []libdns.Record
 
