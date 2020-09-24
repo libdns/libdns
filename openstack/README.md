@@ -1,6 +1,6 @@
 # OpenStack Designate for `libdns`
 
-[![godoc reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/libdns/digitalocean)
+[![godoc reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/libdns/openstack)
 
 
 This package implements the libdns interfaces for the [OpenStack Designate API](https://docs.openstack.org/api-ref/dns/) (using the Go implementation from: github.com/gophercloud/gophercloud/openstack)
