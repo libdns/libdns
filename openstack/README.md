@@ -22,7 +22,7 @@ export OS_ENDPOINT_TYPE=""
 ```
 ## Example
 
-Here's a minimal example of how to get all your DNS records using this `libdns` provider (see `_example/main.go`)
+Here's a minimal example of how to get all your DNS records using this `libdns` provider (see `examples/main.go`)
 
 ```go
 package main
