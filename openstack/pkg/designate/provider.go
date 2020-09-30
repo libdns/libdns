@@ -28,10 +28,6 @@ type AuthOpenStack struct {
 	EndpointType       string
 }
 
-type DNSOptions struct {
-	DNSDescription string
-}
-
 // GetRecords lists all the records in the zone.
 func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
 	err := p.auth(zone)
