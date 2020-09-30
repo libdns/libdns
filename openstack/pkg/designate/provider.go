@@ -2,21 +2,30 @@ package designate
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/dns/v2/recordsets"
 	"github.com/libdns/libdns"
-	"github.com/pkg/errors"
 )
 
 type Provider struct {
-	DNSClient  *gophercloud.ServiceClient
-	Request    Request
-	DNSOptions DNSOptions
+	DNSClient      *gophercloud.ServiceClient
+	AuthOpenStack  AuthOpenStack
+	ZoneID         string
+	RecordID       string
+	DNSDescription string
 }
 
-type Request struct {
-	ZoneID   string
-	RecordID string
+type AuthOpenStack struct {
+	RegionName         string
+	TenantID           string
+	IdentityApiVersion string
+	Password           string
+	AuthURL            string
+	Username           string
+	TenantName         string
+	EndpointType       string
 }
 
 type DNSOptions struct {
@@ -25,18 +34,23 @@ type DNSOptions struct {
 
 // GetRecords lists all the records in the zone.
 func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
+	err := p.auth(zone)
+	if err != nil {
+		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
+	}
+
 	listOpts := recordsets.ListOpts{
 		Status: "ACTIVE",
 	}
 
-	allPages, err := recordsets.ListByZone(p.DNSClient, p.Request.ZoneID, listOpts).AllPages()
+	allPages, err := recordsets.ListByZone(p.DNSClient, p.ZoneID, listOpts).AllPages()
 	if err != nil {
-		return nil, errors.Wrap(err, "trying to get list by ZoneID")
+		return nil, fmt.Errorf("trying to get list by ZoneID: %v", err)
 	}
 
 	allRRs, err := recordsets.ExtractRecordSets(allPages)
 	if err != nil {
-		return nil, errors.Wrap(err, "trying to extract records")
+		return nil, fmt.Errorf("trying to extract records: %v", err)
 	}
 
 	return p.getRecords(allRRs)
@@ -45,6 +59,11 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 // AppendRecords adds records to the zone and returns the records that were created.
 // Due to technical limitations of the LiveDNS API, it may affect the TTL of similar records
 func (p *Provider) AppendRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
+	err := p.auth(zone)
+	if err != nil {
+		return nil, fmt.Errorf("trying to run run")
+	}
+
 	var appendedRecords []libdns.Record
 
 	for _, record := range records {
@@ -60,6 +79,11 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 
 // DeleteRecords deletes records from the zone and returns the records that were deleted.
 func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
+	err := p.auth(zone)
+	if err != nil {
+		return nil, fmt.Errorf("trying to run run")
+	}
+
 	var deletedRecords []libdns.Record
 
 	for _, record := range records {
@@ -87,6 +111,11 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 // SetRecords sets the records in the zone, either by updating existing records or creating new ones, and returns the recordsthat were updated.
 // Due to technical limitations of the LiveDNS API, it may affect the TTL of similar records.
 func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
+	err := p.auth(zone)
+	if err != nil {
+		return nil, fmt.Errorf("trying to run run")
+	}
+
 	var setRecords []libdns.Record
 
 	for _, record := range records {

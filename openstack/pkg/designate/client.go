@@ -1,12 +1,13 @@
 package designate
 
 import (
+	"errors"
+	"fmt"
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/dns/v2/recordsets"
 	"github.com/gophercloud/gophercloud/openstack/dns/v2/zones"
 	"github.com/libdns/libdns"
-	"github.com/pkg/errors"
 	"os"
 	"time"
 )
@@ -32,7 +33,7 @@ func (p *Provider) getRecordID(recordName string, zone string) (string, error) {
 		Type: "TXT",
 	}
 
-	allPages, err := recordsets.ListByZone(p.DNSClient, p.Request.ZoneID, listOpts).AllPages()
+	allPages, err := recordsets.ListByZone(p.DNSClient, p.ZoneID, listOpts).AllPages()
 	if err != nil {
 		return "", err
 	}
@@ -52,14 +53,14 @@ func (p *Provider) getRecordID(recordName string, zone string) (string, error) {
 }
 
 func (p *Provider) setRecordID(recordID string) {
-	p.Request.RecordID = recordID
+	p.RecordID = recordID
 }
 
 func (p *Provider) setDescription(desc string) error {
 	if desc == "" {
-		return errors.New("example description")
+		p.DNSDescription = "example description"
 	}
-	p.DNSOptions.DNSDescription = desc
+	p.DNSDescription = desc
 
 	return nil
 }
@@ -74,16 +75,16 @@ func (p *Provider) createRecord(record libdns.Record, zone string) error {
 
 	exist, err := p.getRecordID(record.Name, zone)
 	if err != nil {
-		return errors.Wrap(err, "cannot get recordID")
+		return fmt.Errorf("cannot get recordID: %v", err)
 	}
 
 	if exist != "" {
 		return errors.New("DNS record already exist")
 	}
 
-	_, err = recordsets.Create(p.DNSClient, p.Request.ZoneID, createOpts).Extract()
+	_, err = recordsets.Create(p.DNSClient, p.ZoneID, createOpts).Extract()
 	if err != nil {
-		return errors.Wrap(err, "cannot create DNS record")
+		return fmt.Errorf("cannot create DNS record: %v", err)
 	}
 
 	return nil
@@ -96,7 +97,7 @@ func (p *Provider) updateRecord(record libdns.Record, zone string) error {
 	}
 
 	// Update updates a recordset in a given zone
-	_, err := recordsets.Update(p.DNSClient, p.Request.ZoneID, p.Request.RecordID, updateOpts).Extract()
+	_, err := recordsets.Update(p.DNSClient, p.ZoneID, p.RecordID, updateOpts).Extract()
 	if err != nil {
 		return err
 	}
@@ -104,7 +105,7 @@ func (p *Provider) updateRecord(record libdns.Record, zone string) error {
 }
 
 func (p *Provider) deleteRecord(record libdns.Record, zone string) error {
-	err := recordsets.Delete(p.DNSClient, p.Request.ZoneID, p.Request.RecordID).ExtractErr()
+	err := recordsets.Delete(p.DNSClient, p.ZoneID, p.RecordID).ExtractErr()
 	if err != nil {
 		return err
 	}
@@ -112,50 +113,90 @@ func (p *Provider) deleteRecord(record libdns.Record, zone string) error {
 	return nil
 }
 
-func New(zoneName string) (*Provider, error) {
+func (p *Provider) exportEnvVariables() error {
+	err := os.Setenv("OS_REGION_NAME", p.AuthOpenStack.RegionName)
+	if err != nil {
+		return fmt.Errorf("cannot set environment variable: %v", err)
+	}
+	err = os.Setenv("OS_TENANT_ID", p.AuthOpenStack.TenantID)
+	if err != nil {
+		return fmt.Errorf("cannot set environment variable: %v", err)
+	}
+	err = os.Setenv("OS_IDENTITY_API_VERSION", p.AuthOpenStack.IdentityApiVersion)
+	if err != nil {
+		return fmt.Errorf("cannot set environment variable: %v", err)
+	}
+	err = os.Setenv("OS_PASSWORD", p.AuthOpenStack.Password)
+	if err != nil {
+		return fmt.Errorf("cannot set environment variable: %v", err)
+	}
+	err = os.Setenv("OS_AUTH_URL", p.AuthOpenStack.AuthURL)
+	if err != nil {
+		return fmt.Errorf("cannot set environment variable: %v", err)
+	}
+	err = os.Setenv("OS_USERNAME", p.AuthOpenStack.Username)
+	if err != nil {
+		return fmt.Errorf("cannot set environment variable: %v", err)
+	}
+	err = os.Setenv("OS_TENANT_NAME", p.AuthOpenStack.TenantName)
+	if err != nil {
+		return fmt.Errorf("cannot set environment variable: %v", err)
+	}
+	err = os.Setenv("OS_ENDPOINT_TYPE", p.AuthOpenStack.EndpointType)
+	if err != nil {
+		return fmt.Errorf("cannot set environment variable: %v", err)
+	}
+	return nil
+}
+
+func (p *Provider) auth(zoneName string) error {
+	err := p.exportEnvVariables()
+	if err != nil {
+		return err
+	}
+
 	opts, err := openstack.AuthOptionsFromEnv()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	provider, err := openstack.AuthenticatedClient(opts)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	dnsClient, err := openstack.NewDNSV2(provider, gophercloud.EndpointOpts{
 		Region: os.Getenv("OS_REGION_NAME"),
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
+	p.DNSClient = dnsClient
 
-	zoneID, err := setZoneID(zoneName, dnsClient)
+	zoneID, err := p.setZoneID(zoneName)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	p.ZoneID = zoneID
+
+	if p.ZoneID == "" {
+		return errors.New("zoneID does not exist")
 	}
 
-	if zoneID == "" {
-		return nil, errors.New("zoneID does not exist")
-	}
-
-	return &Provider{
-		DNSClient: dnsClient,
-		Request:   Request{ZoneID: zoneID},
-	}, nil
+	return nil
 }
 
-func setZoneID(zoneName string, dnsClient *gophercloud.ServiceClient) (string, error) {
+func (p *Provider) setZoneID(zoneName string) (string, error) {
 	listOpts := zones.ListOpts{}
 
-	allPages, err := zones.List(dnsClient, listOpts).AllPages()
+	allPages, err := zones.List(p.DNSClient, listOpts).AllPages()
 	if err != nil {
-		return "", errors.Wrap(err, "trying to get zones list")
+		return "", fmt.Errorf("trying to get zones list: %v", err)
 	}
 
 	allZones, err := zones.ExtractZones(allPages)
 	if err != nil {
-		return "", errors.Wrap(err, "trying to extract zones")
+		return "", fmt.Errorf("trying to extract zones: %v", err)
 	}
 
 	for _, zone := range allZones {
