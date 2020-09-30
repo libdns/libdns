@@ -10,11 +10,11 @@ import (
 )
 
 type Provider struct {
-	DNSClient      *gophercloud.ServiceClient
+	dnsClient      *gophercloud.ServiceClient
 	AuthOpenStack  AuthOpenStack
-	ZoneID         string
-	RecordID       string
-	DNSDescription string
+	zoneID         string
+	recordID       string
+	dnsDescription string
 }
 
 type AuthOpenStack struct {
@@ -39,7 +39,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		Status: "ACTIVE",
 	}
 
-	allPages, err := recordsets.ListByZone(p.DNSClient, p.ZoneID, listOpts).AllPages()
+	allPages, err := recordsets.ListByZone(p.dnsClient, p.zoneID, listOpts).AllPages()
 	if err != nil {
 		return nil, fmt.Errorf("trying to get list by ZoneID: %v", err)
 	}

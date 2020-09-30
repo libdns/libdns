@@ -33,7 +33,7 @@ func (p *Provider) getRecordID(recordName string, zone string) (string, error) {
 		Type: "TXT",
 	}
 
-	allPages, err := recordsets.ListByZone(p.DNSClient, p.ZoneID, listOpts).AllPages()
+	allPages, err := recordsets.ListByZone(p.dnsClient, p.zoneID, listOpts).AllPages()
 	if err != nil {
 		return "", err
 	}
@@ -53,14 +53,14 @@ func (p *Provider) getRecordID(recordName string, zone string) (string, error) {
 }
 
 func (p *Provider) setRecordID(recordID string) {
-	p.RecordID = recordID
+	p.recordID = recordID
 }
 
 func (p *Provider) setDescription(desc string) error {
 	if desc == "" {
-		p.DNSDescription = "example description"
+		p.dnsDescription = "example description"
 	}
-	p.DNSDescription = desc
+	p.dnsDescription = desc
 
 	return nil
 }
@@ -82,7 +82,7 @@ func (p *Provider) createRecord(record libdns.Record, zone string) error {
 		return errors.New("DNS record already exist")
 	}
 
-	_, err = recordsets.Create(p.DNSClient, p.ZoneID, createOpts).Extract()
+	_, err = recordsets.Create(p.dnsClient, p.zoneID, createOpts).Extract()
 	if err != nil {
 		return fmt.Errorf("cannot create DNS record: %v", err)
 	}
@@ -92,12 +92,12 @@ func (p *Provider) createRecord(record libdns.Record, zone string) error {
 
 func (p *Provider) updateRecord(record libdns.Record, zone string) error {
 	updateOpts := recordsets.UpdateOpts{
-		TTL:     IntToPointer(int(record.TTL / time.Second)),
+		TTL:     intToPointer(int(record.TTL / time.Second)),
 		Records: []string{record.Value},
 	}
 
 	// Update updates a recordset in a given zone
-	_, err := recordsets.Update(p.DNSClient, p.ZoneID, p.RecordID, updateOpts).Extract()
+	_, err := recordsets.Update(p.dnsClient, p.zoneID, p.recordID, updateOpts).Extract()
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (p *Provider) updateRecord(record libdns.Record, zone string) error {
 }
 
 func (p *Provider) deleteRecord(record libdns.Record, zone string) error {
-	err := recordsets.Delete(p.DNSClient, p.ZoneID, p.RecordID).ExtractErr()
+	err := recordsets.Delete(p.dnsClient, p.zoneID, p.recordID).ExtractErr()
 	if err != nil {
 		return err
 	}
@@ -171,15 +171,15 @@ func (p *Provider) auth(zoneName string) error {
 	if err != nil {
 		return err
 	}
-	p.DNSClient = dnsClient
+	p.dnsClient = dnsClient
 
 	zoneID, err := p.setZoneID(zoneName)
 	if err != nil {
 		return err
 	}
-	p.ZoneID = zoneID
+	p.zoneID = zoneID
 
-	if p.ZoneID == "" {
+	if p.zoneID == "" {
 		return errors.New("zoneID does not exist")
 	}
 
@@ -189,7 +189,7 @@ func (p *Provider) auth(zoneName string) error {
 func (p *Provider) setZoneID(zoneName string) (string, error) {
 	listOpts := zones.ListOpts{}
 
-	allPages, err := zones.List(p.DNSClient, listOpts).AllPages()
+	allPages, err := zones.List(p.dnsClient, listOpts).AllPages()
 	if err != nil {
 		return "", fmt.Errorf("trying to get zones list: %v", err)
 	}
@@ -208,6 +208,6 @@ func (p *Provider) setZoneID(zoneName string) (string, error) {
 	return "", nil
 }
 
-func IntToPointer(x int) *int {
+func intToPointer(x int) *int {
 	return &x
 }
