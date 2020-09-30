@@ -57,7 +57,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 func (p *Provider) AppendRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
 	err := p.auth(zone)
 	if err != nil {
-		return nil, fmt.Errorf("trying to run run")
+		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
 
 	var appendedRecords []libdns.Record
@@ -77,7 +77,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
 	err := p.auth(zone)
 	if err != nil {
-		return nil, fmt.Errorf("trying to run run")
+		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
 
 	var deletedRecords []libdns.Record
@@ -109,7 +109,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
 	err := p.auth(zone)
 	if err != nil {
-		return nil, fmt.Errorf("trying to run run")
+		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
 
 	var setRecords []libdns.Record
