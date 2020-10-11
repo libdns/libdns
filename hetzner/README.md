@@ -11,7 +11,7 @@ To authenticate you need to supply a Hetzner [Auth-API-Token](https://dns.hetzne
 
 ## Example
 
-Here's a minimal example of how to get all your DNS records. See also: [provider_test.go](https://github.com/libdns/hetzner/blob/master/provider_test.go)
+Here's a minimal example of how to get all DNS records for zone. See also: [provider_test.go](https://github.com/libdns/hetzner/blob/master/provider_test.go)
 
 ```go
 package main
