@@ -14,26 +14,18 @@ import (
 	"github.com/libdns/libdns"
 )
 
-type meta struct {
-	Pagination struct {
-		Page         int `json:"page"`
-		PerPage      int `json:"per_page"`
-		LastPage     int `json:"last_page"`
-		TotalEntries int `json:"total_entries"`
-	} `json:"pagination"`
-}
-
 type getAllRecordsResponse struct {
 	Records []record `json:"records"`
-	Meta    meta     `json:"meta"`
 }
+
 type getAllZonesResponse struct {
 	Zones []zone `json:"zones"`
-	Meta  meta   `json:"meta"`
 }
+
 type createRecordResponse struct {
 	Record record `json:"record"`
 }
+
 type updateRecordResponse struct {
 	Record record `json:"record"`
 }

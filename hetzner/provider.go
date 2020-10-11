@@ -7,7 +7,7 @@ import (
 	"github.com/libdns/libdns"
 )
 
-// Provider implements the libdns interfaces for DigitalOcean
+// Provider implements the libdns interfaces for Hetzner
 type Provider struct {
 	//Client
 
@@ -15,14 +15,9 @@ type Provider struct {
 	AuthAPIToken string `json:"auth_api_token,omitempty"`
 }
 
-// unFQDN trims any trailing "." from fqdn. DigitalOcean's API does not use FQDNs.
-func (p *Provider) unFQDN(fqdn string) string {
-	return strings.TrimSuffix(fqdn, ".")
-}
-
 // GetRecords lists all the records in the zone.
 func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
-	records, err := getAllRecords(ctx, p.AuthAPIToken, zone)
+	records, err := getAllRecords(ctx, p.AuthAPIToken, unFQDN(zone))
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +30,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 	var appendedRecords []libdns.Record
 
 	for _, record := range records {
-		newRecord, err := createRecord(ctx, p.AuthAPIToken, zone, record)
+		newRecord, err := createRecord(ctx, p.AuthAPIToken, unFQDN(zone), record)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +41,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 }
 
 // DeleteRecords deletes the records from the zone.
-func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
+func (p *Provider) DeleteRecords(ctx context.Context, _ string, records []libdns.Record) ([]libdns.Record, error) {
 	for _, record := range records {
 		err := deleteRecord(ctx, p.AuthAPIToken, record)
 		if err != nil {
@@ -63,7 +58,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	var setRecords []libdns.Record
 
 	for _, record := range records {
-		setRecord, err := createOrUpdateRecord(ctx, p.AuthAPIToken, zone, record)
+		setRecord, err := createOrUpdateRecord(ctx, p.AuthAPIToken, unFQDN(zone), record)
 		if err != nil {
 			return setRecords, err
 		}
@@ -71,6 +66,11 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	}
 
 	return setRecords, nil
+}
+
+// unFQDN trims any trailing "." from fqdn. Hetzner's API does not use FQDNs.
+func unFQDN(fqdn string) string {
+	return strings.TrimSuffix(fqdn, ".")
 }
 
 // Interface guards
