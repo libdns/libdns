@@ -61,7 +61,7 @@ func TestMain(m *testing.M) {
 
 	if len(envToken) == 0 || len(envZone) == 0 {
 		fmt.Println(`Please notice that this test runs agains the public Hetzner DNS Api, so you sould
-never run the test with a zone, use in production.
+never run the test with a zone, used in production.
 To run this test, you have to specify 'LIBDNS_HETZNER_TEST_TOKEN' and 'LIBDNS_HETZNER_TEST_ZONE'.
 Example: "LIBDNS_HETZNER_TEST_TOKEN="123" LIBDNS_HETZNER_TEST_ZONE="my-domain.com" go test ./... -v`)
 		os.Exit(1)
@@ -128,7 +128,6 @@ func Test_DeleteRecords(t *testing.T) {
 	}
 
 	for _, testRecord := range testRecords {
-
 		var foundRecord *libdns.Record
 		for _, record := range records {
 			if testRecord.ID == record.ID {
@@ -178,8 +177,7 @@ func Test_SetRecords(t *testing.T) {
 		AuthAPIToken: envToken,
 	}
 
-	testRecords, _ := setupTestRecords(t, p)
-
+	existingRecords, _ := setupTestRecords(t, p)
 	newTestRecords := []libdns.Record{
 		{
 			Type:  "TXT",
@@ -194,18 +192,18 @@ func Test_SetRecords(t *testing.T) {
 			TTL:   time.Duration(120 * time.Second),
 		},
 	}
-	testRecords = append(testRecords, newTestRecords...)
 
-	testRecords[0].Value = "new_value"
+	allRecords := append(existingRecords, newTestRecords...)
+	allRecords[0].Value = "new_value"
 
-	records, err := p.SetRecords(context.TODO(), envZone, testRecords)
+	records, err := p.SetRecords(context.TODO(), envZone, allRecords)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer cleanupRecords(t, p, records)
 
-	if len(records) != len(testRecords) {
-		t.Fatalf("len(records) != len(testRecords) => %d != %d", len(records), len(testRecords))
+	if len(records) != len(allRecords) {
+		t.Fatalf("len(records) != len(allRecords) => %d != %d", len(records), len(allRecords))
 	}
 
 	if records[0].Value != "new_value" {
