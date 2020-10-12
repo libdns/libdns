@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/libdns/hetzner"
 	"github.com/libdns/libdns"
-	"github.com/libdns/libdns/hetzner"
 )
 
 var (
