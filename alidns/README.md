@@ -20,7 +20,10 @@ import (
 )
 
 func main() {
-        provider := alidns.Provider{AccKeyID: "<AccessKeyId form your aliyun console>", AccKeySecret: "<AccessKeySecret form your aliyun console>"}
+        provider := alidns.Provider{
+               AccKeyID: "<AccessKeyId form your aliyun console>",
+               AccKeySecret: "<AccessKeySecret form your aliyun console>",
+        }
 
         records, err  := provider.GetRecords(context.TODO(), "example.com")
         if err != nil {
