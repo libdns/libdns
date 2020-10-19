@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-        provider := alidns.Provider{AccessKeyId: "<AccessKeyId form your aliyun>", PrivateKeyPath: "<AccessKeySecret form your aliyun>"}
+        provider := alidns.Provider{AccKeyID: "<AccessKeyId form your aliyun console>", AccKeySecret: "<AccessKeySecret form your aliyun console>"}
 
         records, err  := provider.GetRecords(context.TODO(), "example.com")
         if err != nil {
@@ -32,3 +32,4 @@ func main() {
         }
 }
 ```
+For complete demo check _demo/demo.go
