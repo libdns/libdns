@@ -35,4 +35,4 @@ func main() {
         }
 }
 ```
-For complete demo check _demo/demo.go
+For complete demo check [_demo/demo.go](_demo/demo.go)
