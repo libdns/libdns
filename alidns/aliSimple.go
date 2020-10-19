@@ -113,9 +113,9 @@ func (c *AliClint) signReq(method string) error {
 	}
 	sort.Sort(byKey(c.reqMap))
 	str := c.reqMapToStr()
-	fmt.Println(dbgTAG+"req to str:", str)
+	//fmt.Println(dbgTAG+"req to str:", str)
 	str = c.reqStrToSign(str, method)
-	fmt.Println(dbgTAG+"url to sign:", str)
+	//fmt.Println(dbgTAG+"url to sign:", str)
 	c.sigStr = signStr(str, c.sigPwd)
 	return nil
 }
@@ -163,7 +163,6 @@ func (c *AliClint) reqStrToSign(ins string, method string) string {
 }
 
 func (c *AliClint) reqMapToStr() string {
-	//str := ""
 	m0 := c.reqMap
 	urlEn := url.Values{}
 	c.mutex.Lock()
