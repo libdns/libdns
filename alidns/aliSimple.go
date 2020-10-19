@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
+	"net/url"
 	"sort"
 	"strings"
 	"sync"
@@ -113,6 +113,7 @@ func (c *AliClint) signReq(method string) error {
 	}
 	sort.Sort(byKey(c.reqMap))
 	str := c.reqMapToStr()
+	fmt.Println(dbgTAG+"req to str:", str)
 	str = c.reqStrToSign(str, method)
 	fmt.Println(dbgTAG+"url to sign:", str)
 	c.sigStr = signStr(str, c.sigPwd)
@@ -158,20 +159,21 @@ func (c *AliClint) reqStrToSign(ins string, method string) string {
 		method = "GET"
 	}
 	ecReq := urlEncode(ins)
-	return fmt.Sprintf("%s&%s&%s", method, urlEncode("/"), ecReq)
+	return fmt.Sprintf("%s&%s&%s", method, "%2F", ecReq)
 }
 
 func (c *AliClint) reqMapToStr() string {
-	str := ""
+	//str := ""
 	m0 := c.reqMap
+	urlEn := url.Values{}
 	c.mutex.Lock()
 	if m0 != nil {
 		for _, o := range m0 {
-			str += fmt.Sprintf("%s=%s&", o.key, o.val)
+			urlEn.Add(o.key, o.val)
 		}
 	}
 	c.mutex.Unlock()
-	return strings.TrimRight(str, "&")
+	return urlEn.Encode()
 }
 
 func signStr(ins string, sec string) string {
@@ -183,17 +185,11 @@ func signStr(ins string, sec string) string {
 }
 
 func urlEncode(ins string) string {
-	str0 := ""
-	for _, s0 := range ins {
-		m, _ := regexp.MatchString(`[A-Za-z0-9.~_-]`, string(s0))
-		if m {
-			str0 += fmt.Sprint(string(s0))
-		} else if string(s0) == ":" {
-			str0 += fmt.Sprint("%253A")
-		} else {
-			str0 += fmt.Sprintf("%%%02X", string(s0))
-		}
-	}
+	str0 := ins
+	str0 = strings.Replace(str0, "+", "%20", -1)
+	str0 = strings.Replace(str0, "*", "%2A", -1)
+	str0 = strings.Replace(str0, "%7E", "~", -1)
+	str0 = url.QueryEscape(str0)
 	return str0
 }
 
