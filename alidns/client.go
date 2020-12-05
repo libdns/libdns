@@ -10,30 +10,30 @@ import (
 	"sync"
 )
 
-// Client is an abstration of AliClint
+// Client is an abstration of AliClient
 type Client struct {
-	Clint *AliClint
-	mutex sync.Mutex
+	AClient *AliClient
+	mutex   sync.Mutex
 }
 
 func (p *Provider) getClient() error {
 	cred := newCredInfo(p.AccKeyID, p.AccKeySecret, p.RegionID)
-	return p.getAliClient(cred)
+	return p.client.getAliClient(cred)
 }
 
 func (p *Provider) addDomainRecord(ctx context.Context, rc aliDomaRecord) (recID string, err error) {
-	p.mutex.Lock()
+	p.client.mutex.Lock()
 	p.getClient()
-	p.Clint.addReqBody("Action", "AddDomainRecord")
-	p.Clint.addReqBody("DomainName", rc.DName)
-	p.Clint.addReqBody("RR", rc.Rr)
-	p.Clint.addReqBody("Type", rc.DTyp)
-	p.Clint.addReqBody("Value", rc.DVal)
-	p.Clint.addReqBody("TTL", fmt.Sprintf("%d", rc.TTL))
+	p.client.AClient.addReqBody("Action", "AddDomainRecord")
+	p.client.AClient.addReqBody("DomainName", rc.DName)
+	p.client.AClient.addReqBody("RR", rc.Rr)
+	p.client.AClient.addReqBody("Type", rc.DTyp)
+	p.client.AClient.addReqBody("Value", rc.DVal)
+	p.client.AClient.addReqBody("TTL", fmt.Sprintf("%d", rc.TTL))
 	rs := aliResult{}
 	err = p.doAPIRequest(ctx, &rs)
 	recID = rs.RecID
-	p.mutex.Unlock()
+	p.client.mutex.Unlock()
 	if err != nil {
 		return "", err
 	}
@@ -41,14 +41,14 @@ func (p *Provider) addDomainRecord(ctx context.Context, rc aliDomaRecord) (recID
 }
 
 func (p *Provider) delDomainRecord(ctx context.Context, rc aliDomaRecord) (recID string, err error) {
-	p.mutex.Lock()
+	p.client.mutex.Lock()
 	p.getClient()
-	p.Clint.addReqBody("Action", "DeleteDomainRecord")
-	p.Clint.addReqBody("RecordId", rc.RecID)
+	p.client.AClient.addReqBody("Action", "DeleteDomainRecord")
+	p.client.AClient.addReqBody("RecordId", rc.RecID)
 	rs := aliResult{}
 	err = p.doAPIRequest(ctx, &rs)
 	recID = rs.RecID
-	p.mutex.Unlock()
+	p.client.mutex.Unlock()
 	if err != nil {
 		return "", err
 	}
@@ -56,18 +56,18 @@ func (p *Provider) delDomainRecord(ctx context.Context, rc aliDomaRecord) (recID
 }
 
 func (p *Provider) setDomainRecord(ctx context.Context, rc aliDomaRecord) (recID string, err error) {
-	p.mutex.Lock()
+	p.client.mutex.Lock()
 	p.getClient()
-	p.Clint.addReqBody("Action", "UpdateDomainRecord")
-	p.Clint.addReqBody("RecordId", rc.RecID)
-	p.Clint.addReqBody("RR", rc.Rr)
-	p.Clint.addReqBody("Type", rc.DTyp)
-	p.Clint.addReqBody("Value", rc.DVal)
-	p.Clint.addReqBody("TTL", fmt.Sprintf("%d", rc.TTL))
+	p.client.AClient.addReqBody("Action", "UpdateDomainRecord")
+	p.client.AClient.addReqBody("RecordId", rc.RecID)
+	p.client.AClient.addReqBody("RR", rc.Rr)
+	p.client.AClient.addReqBody("Type", rc.DTyp)
+	p.client.AClient.addReqBody("Value", rc.DVal)
+	p.client.AClient.addReqBody("TTL", fmt.Sprintf("%d", rc.TTL))
 	rs := aliResult{}
 	err = p.doAPIRequest(ctx, &rs)
 	recID = rs.RecID
-	p.mutex.Unlock()
+	p.client.mutex.Unlock()
 	if err != nil {
 		return "", err
 	}
@@ -75,14 +75,14 @@ func (p *Provider) setDomainRecord(ctx context.Context, rc aliDomaRecord) (recID
 }
 
 func (p *Provider) getDomainRecord(ctx context.Context, recID string) (aliDomaRecord, error) {
-	p.mutex.Lock()
+	p.client.mutex.Lock()
 	p.getClient()
-	p.Clint.addReqBody("Action", "DescribeDomainRecordInfo")
-	p.Clint.addReqBody("RecordId", recID)
+	p.client.AClient.addReqBody("Action", "DescribeDomainRecordInfo")
+	p.client.AClient.addReqBody("RecordId", recID)
 	rs := aliResult{}
 	err := p.doAPIRequest(ctx, &rs)
 	rec := rs.ToDomaRecord()
-	p.mutex.Unlock()
+	p.client.mutex.Unlock()
 	if err != nil {
 		return aliDomaRecord{}, err
 	}
@@ -90,13 +90,13 @@ func (p *Provider) getDomainRecord(ctx context.Context, recID string) (aliDomaRe
 }
 
 func (p *Provider) queryDomainRecords(ctx context.Context, name string) ([]aliDomaRecord, error) {
-	p.mutex.Lock()
+	p.client.mutex.Lock()
 	p.getClient()
-	p.Clint.addReqBody("Action", "DescribeDomainRecords")
-	p.Clint.addReqBody("DomainName", name)
+	p.client.AClient.addReqBody("Action", "DescribeDomainRecords")
+	p.client.AClient.addReqBody("DomainName", name)
 	rs := aliResult{}
 	err := p.doAPIRequest(ctx, &rs)
-	p.mutex.Unlock()
+	p.client.mutex.Unlock()
 	if err != nil {
 		return []aliDomaRecord{}, err
 	}
@@ -104,15 +104,15 @@ func (p *Provider) queryDomainRecords(ctx context.Context, name string) ([]aliDo
 }
 
 func (p *Provider) queryDomainRecord(ctx context.Context, rr string, name string) (aliDomaRecord, error) {
-	p.mutex.Lock()
+	p.client.mutex.Lock()
 	p.getClient()
-	p.Clint.addReqBody("Action", "DescribeDomainRecords")
-	p.Clint.addReqBody("DomainName", name)
-	p.Clint.addReqBody("KeyWord", rr)
-	p.Clint.addReqBody("SearchMode", "EXACT")
+	p.client.AClient.addReqBody("Action", "DescribeDomainRecords")
+	p.client.AClient.addReqBody("DomainName", name)
+	p.client.AClient.addReqBody("KeyWord", rr)
+	p.client.AClient.addReqBody("SearchMode", "EXACT")
 	rs := aliResult{}
 	err := p.doAPIRequest(ctx, &rs)
-	p.mutex.Unlock()
+	p.client.mutex.Unlock()
 	if err != nil {
 		return aliDomaRecord{}, err
 	}
@@ -124,13 +124,13 @@ func (p *Provider) queryDomainRecord(ctx context.Context, rr string, name string
 
 //queryMainDomain rseserved for absolute names to name,zone
 func (p *Provider) queryMainDomain(ctx context.Context, name string) (string, string, error) {
-	p.mutex.Lock()
+	p.client.mutex.Lock()
 	p.getClient()
-	p.Clint.addReqBody("Action", "GetMainDomainName")
-	p.Clint.addReqBody("InputString", name)
+	p.client.AClient.addReqBody("Action", "GetMainDomainName")
+	p.client.AClient.addReqBody("InputString", name)
 	rs := aliResult{}
 	err := p.doAPIRequest(ctx, &rs)
-	p.mutex.Unlock()
+	p.client.mutex.Unlock()
 	//fmt.Println("err:", err, "rs:", rs)
 	if err != nil {
 		return "", "", err
@@ -139,7 +139,7 @@ func (p *Provider) queryMainDomain(ctx context.Context, name string) (string, st
 }
 
 func (p *Provider) doAPIRequest(ctx context.Context, result interface{}) error {
-	req, err := p.applyReq(ctx, "GET", nil)
+	req, err := p.client.applyReq(ctx, "GET", nil)
 	if err != nil {
 		return err
 	}
@@ -166,6 +166,6 @@ func (p *Provider) doAPIRequest(ctx context.Context, result interface{}) error {
 	if rsp.StatusCode != 200 {
 		return fmt.Errorf("get error status: HTTP %d: %+v", rsp.StatusCode, result.(*aliResult).Msg)
 	}
-	p.Clint = nil
+	p.client.AClient = nil
 	return err
 }

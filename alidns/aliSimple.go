@@ -27,8 +27,8 @@ type CredInfo struct {
 	RegionID     string `json:"region_id,omitempty"`
 }
 
-// AliClint abstructs the alidns.Client
-type AliClint struct {
+// AliClient abstructs the alidns.Client
+type AliClient struct {
 	mutex   sync.Mutex
 	APIHost string
 	reqMap  []VKey
@@ -57,11 +57,11 @@ func newCredInfo(pAccKeyID, pAccKeySecret, pRegionID string) *CredInfo {
 }
 
 func (c *Client) getAliClient(cred *CredInfo) error {
-	cl0, err := c.Clint.getAliClientSche(cred, "https")
+	cl0, err := c.AClient.getAliClientSche(cred, "https")
 	if err != nil {
 		return err
 	}
-	c.Clint = cl0
+	c.AClient = cl0
 	return nil
 }
 
@@ -69,7 +69,7 @@ func (c *Client) applyReq(cxt context.Context, method string, body io.Reader) (*
 	if method == "" {
 		method = "GET"
 	}
-	c0 := c.Clint
+	c0 := c.AClient
 	c0.signReq(method)
 	si0 := fmt.Sprintf("%s=%s", "Signature", c0.sigStr)
 	mURL := fmt.Sprintf("%s?%s&%s", c0.APIHost, c0.reqMapToStr(), si0)
@@ -81,24 +81,24 @@ func (c *Client) applyReq(cxt context.Context, method string, body io.Reader) (*
 	return req, nil
 }
 
-func (c *AliClint) getAliClientSche(cred *CredInfo, scheme string) (*AliClint, error) {
+func (c *AliClient) getAliClientSche(cred *CredInfo, scheme string) (*AliClient, error) {
 	if cred == nil {
-		return &AliClint{}, errors.New("alicloud: credentials missing")
+		return &AliClient{}, errors.New("alicloud: credentials missing")
 	}
 	if scheme == "" {
 		scheme = "http"
 	}
 
-	cl0 := &AliClint{
+	cl0 := &AliClient{
 		APIHost: fmt.Sprintf(addrOfAPI, scheme),
 		reqMap: []VKey{
-			VKey{key: "AccessKeyId", val: cred.AccKeyID},
-			VKey{key: "Format", val: "json"},
-			VKey{key: "SignatureMethod", val: "HMAC-SHA1"},
-			VKey{key: "SignatureNonce", val: fmt.Sprintf("%d", time.Now().UnixNano())},
-			VKey{key: "SignatureVersion", val: "1.0"},
-			VKey{key: "Timestamp", val: time.Now().UTC().Format("2006-01-02T15:04:05Z")},
-			VKey{key: "Version", val: "2015-01-09"},
+			{key: "AccessKeyId", val: cred.AccKeyID},
+			{key: "Format", val: "json"},
+			{key: "SignatureMethod", val: "HMAC-SHA1"},
+			{key: "SignatureNonce", val: fmt.Sprintf("%d", time.Now().UnixNano())},
+			{key: "SignatureVersion", val: "1.0"},
+			{key: "Timestamp", val: time.Now().UTC().Format("2006-01-02T15:04:05Z")},
+			{key: "Version", val: "2015-01-09"},
 		},
 		sigStr: "",
 		sigPwd: cred.AccKeySecret,
@@ -107,7 +107,7 @@ func (c *AliClint) getAliClientSche(cred *CredInfo, scheme string) (*AliClint, e
 	return cl0, nil
 }
 
-func (c *AliClint) signReq(method string) error {
+func (c *AliClient) signReq(method string) error {
 	if c.sigPwd == "" || len(c.reqMap) == 0 {
 		return errors.New("alicloud: AccessKeySecret or Request(includes AccessKeyId) is Misssing")
 	}
@@ -120,7 +120,7 @@ func (c *AliClint) signReq(method string) error {
 	return nil
 }
 
-func (c *AliClint) addReqBody(key string, value string) error {
+func (c *AliClient) addReqBody(key string, value string) error {
 	if key == "" && value == "" {
 		return errors.New("Key or Value is Empty")
 	}
@@ -137,7 +137,7 @@ func (c *AliClint) addReqBody(key string, value string) error {
 	return nil
 }
 
-func (c *AliClint) setReqBody(key string, value string) error {
+func (c *AliClient) setReqBody(key string, value string) error {
 	if key == "" && value == "" {
 		return errors.New("Key or Value is Empty")
 	}
@@ -154,7 +154,7 @@ func (c *AliClint) setReqBody(key string, value string) error {
 	return fmt.Errorf("Entry of %s not found", key)
 }
 
-func (c *AliClint) reqStrToSign(ins string, method string) string {
+func (c *AliClient) reqStrToSign(ins string, method string) string {
 	if method == "" {
 		method = "GET"
 	}
@@ -162,7 +162,7 @@ func (c *AliClint) reqStrToSign(ins string, method string) string {
 	return fmt.Sprintf("%s&%s&%s", method, "%2F", ecReq)
 }
 
-func (c *AliClint) reqMapToStr() string {
+func (c *AliClient) reqMapToStr() string {
 	m0 := c.reqMap
 	urlEn := url.Values{}
 	c.mutex.Lock()

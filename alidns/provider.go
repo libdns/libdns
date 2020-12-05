@@ -3,20 +3,20 @@ package alidns
 import (
 	"context"
 
-	l "github.com/libdns/libdns"
+	"github.com/libdns/libdns"
 )
 
 // Provider implements the libdns interfaces for Alicloud.
 type Provider struct {
-	Client
+	client       Client
 	AccKeyID     string `json:"access_key_id"`
 	AccKeySecret string `json:"access_key_secret"`
 	RegionID     string `json:"region_id,omitempty"`
 }
 
 // AppendRecords adds records to the zone. It returns the records that were added.
-func (p *Provider) AppendRecords(ctx context.Context, zone string, recs []l.Record) ([]l.Record, error) {
-	var rls []l.Record
+func (p *Provider) AppendRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
+	var rls []libdns.Record
 	for _, rec := range recs {
 		ar := alidnsRecord(rec)
 		ar.DName = zone
@@ -32,8 +32,8 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, recs []l.Reco
 
 // DeleteRecords deletes the records from the zone. If a record does not have an ID,
 // it will be looked up. It returns the records that were deleted.
-func (p *Provider) DeleteRecords(ctx context.Context, zone string, recs []l.Record) ([]l.Record, error) {
-	var rls []l.Record
+func (p *Provider) DeleteRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
+	var rls []libdns.Record
 	for _, rec := range recs {
 		ar := alidnsRecord(rec)
 		if len(ar.RecID) == 0 {
@@ -53,8 +53,8 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, recs []l.Reco
 }
 
 // GetRecords lists all the records in the zone.
-func (p *Provider) GetRecords(ctx context.Context, zone string) ([]l.Record, error) {
-	var rls []l.Record
+func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
+	var rls []libdns.Record
 	recs, err := p.queryDomainRecords(ctx, zone)
 	if err != nil {
 		return nil, err
@@ -67,8 +67,8 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]l.Record, err
 
 // SetRecords sets the records in the zone, either by updating existing records
 // or creating new ones. It returns the updated records.
-func (p *Provider) SetRecords(ctx context.Context, zone string, recs []l.Record) ([]l.Record, error) {
-	var rls []l.Record
+func (p *Provider) SetRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
+	var rls []libdns.Record
 	for _, rec := range recs {
 		ar := alidnsRecord(rec)
 		if len(ar.RecID) == 0 {
@@ -90,8 +90,8 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, recs []l.Record)
 
 // Interface guards
 var (
-	_ l.RecordGetter   = (*Provider)(nil)
-	_ l.RecordAppender = (*Provider)(nil)
-	_ l.RecordSetter   = (*Provider)(nil)
-	_ l.RecordDeleter  = (*Provider)(nil)
+	_ libdns.RecordGetter   = (*Provider)(nil)
+	_ libdns.RecordAppender = (*Provider)(nil)
+	_ libdns.RecordSetter   = (*Provider)(nil)
+	_ libdns.RecordDeleter  = (*Provider)(nil)
 )
