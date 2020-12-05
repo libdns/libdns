@@ -131,7 +131,6 @@ func (p *Provider) queryMainDomain(ctx context.Context, name string) (string, st
 	rs := aliResult{}
 	err := p.doAPIRequest(ctx, &rs)
 	p.client.mutex.Unlock()
-	//fmt.Println("err:", err, "rs:", rs)
 	if err != nil {
 		return "", "", err
 	}
@@ -143,7 +142,6 @@ func (p *Provider) doAPIRequest(ctx context.Context, result interface{}) error {
 	if err != nil {
 		return err
 	}
-	//fmt.Println(dbgTAG+"url:", req.URL.String(), "err:", err)
 
 	rsp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -154,7 +152,6 @@ func (p *Provider) doAPIRequest(ctx context.Context, result interface{}) error {
 	var buf []byte
 	buf, err = ioutil.ReadAll(rsp.Body)
 	strBody := string(buf)
-	//fmt.Println(dbgTAG+"json:", strBody, "err:", err)
 	if err != nil {
 		return err
 	}
