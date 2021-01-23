@@ -147,7 +147,7 @@ func (p *Provider) isAuth() (bool, error) {
 	return false, nil
 }
 
-func (p *Provider) auth(zoneName string) error {
+func (p *Provider) auth() error {
 	authStatus, err := p.isAuth()
 	if err != nil {
 		return err

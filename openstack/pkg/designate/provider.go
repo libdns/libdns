@@ -7,7 +7,6 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/dns/v2/recordsets"
 	"github.com/libdns/libdns"
-	"sync"
 )
 
 type Provider struct {
@@ -15,7 +14,6 @@ type Provider struct {
 	AuthOpenStack  AuthOpenStack `yaml:"auth_open_stack"`
 	zoneID         string
 	dnsDescription string
-	mu             sync.Mutex
 }
 
 type AuthOpenStack struct {
@@ -31,7 +29,7 @@ type AuthOpenStack struct {
 
 // GetRecords lists all the records in the zone.
 func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
-	err := p.auth(zone)
+	err := p.auth()
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
@@ -61,7 +59,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 // AppendRecords adds records to the zone and returns the records that were created.
 // Due to technical limitations of the LiveDNS API, it may affect the TTL of similar records
 func (p *Provider) AppendRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
-	err := p.auth(zone)
+	err := p.auth()
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
@@ -86,7 +84,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 
 // DeleteRecords deletes records from the zone and returns the records that were deleted.
 func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
-	err := p.auth(zone)
+	err := p.auth()
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
@@ -121,7 +119,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 // SetRecords sets the records in the zone, either by updating existing records or creating new ones, and returns the recordsthat were updated.
 // Due to technical limitations of the LiveDNS API, it may affect the TTL of similar records.
 func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
-	err := p.auth(zone)
+	err := p.auth()
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
