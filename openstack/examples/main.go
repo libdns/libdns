@@ -30,6 +30,7 @@ func main() {
 		EndpointType:       "publicURL",
 	}}
 
+
 	// GET records
 	records, err := provider.GetRecords(context.TODO(), zone)
 	if err != nil {

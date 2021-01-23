@@ -52,19 +52,6 @@ func (p *Provider) getRecordID(recordName string, zone string) (string, error) {
 	return "", nil
 }
 
-func (p *Provider) setRecordID(recordID string) {
-	p.recordID = recordID
-}
-
-func (p *Provider) setDescription(desc string) error {
-	if desc == "" {
-		p.dnsDescription = "example description"
-	}
-	p.dnsDescription = desc
-
-	return nil
-}
-
 func (p *Provider) createRecord(record libdns.Record, zone string) error {
 	createOpts := recordsets.CreateOpts{
 		Name:    record.Name + zone,
@@ -90,22 +77,22 @@ func (p *Provider) createRecord(record libdns.Record, zone string) error {
 	return nil
 }
 
-func (p *Provider) updateRecord(record libdns.Record, zone string) error {
+func (p *Provider) updateRecord(record libdns.Record, recordID string) error {
 	updateOpts := recordsets.UpdateOpts{
 		TTL:     intToPointer(int(record.TTL / time.Second)),
 		Records: []string{record.Value},
 	}
 
 	// Update updates a recordset in a given zone
-	_, err := recordsets.Update(p.dnsClient, p.zoneID, p.recordID, updateOpts).Extract()
+	_, err := recordsets.Update(p.dnsClient, p.zoneID, recordID, updateOpts).Extract()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (p *Provider) deleteRecord(record libdns.Record, zone string) error {
-	err := recordsets.Delete(p.dnsClient, p.zoneID, p.recordID).ExtractErr()
+func (p *Provider) deleteRecord(recordID string) error {
+	err := recordsets.Delete(p.dnsClient, p.zoneID, recordID).ExtractErr()
 	if err != nil {
 		return err
 	}
@@ -149,8 +136,28 @@ func (p *Provider) exportEnvVariables() error {
 	return nil
 }
 
+func (p *Provider) isAuth() (bool, error) {
+	if p.dnsClient != nil {
+		_, err := p.dnsClient.GetAuthResult().ExtractTokenID()
+		if err != nil {
+			return true, err
+		}
+	}
+
+	return false, nil
+}
+
 func (p *Provider) auth(zoneName string) error {
-	err := p.exportEnvVariables()
+	authStatus, err := p.isAuth()
+	if err != nil {
+		return err
+	}
+
+	if authStatus {
+		return nil
+	}
+
+	err = p.exportEnvVariables()
 	if err != nil {
 		return err
 	}
@@ -173,7 +180,11 @@ func (p *Provider) auth(zoneName string) error {
 	}
 	p.dnsClient = dnsClient
 
-	zoneID, err := p.setZoneID(zoneName)
+	return nil
+}
+
+func (p *Provider) setZone(zone string) error {
+	zoneID, err := p.setZoneID(zone)
 	if err != nil {
 		return err
 	}
@@ -182,7 +193,6 @@ func (p *Provider) auth(zoneName string) error {
 	if p.zoneID == "" {
 		return errors.New("zoneID does not exist")
 	}
-
 	return nil
 }
 

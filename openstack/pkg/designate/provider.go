@@ -7,25 +7,26 @@ import (
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/dns/v2/recordsets"
 	"github.com/libdns/libdns"
+	"sync"
 )
 
 type Provider struct {
 	dnsClient      *gophercloud.ServiceClient
-	AuthOpenStack  AuthOpenStack
+	AuthOpenStack  AuthOpenStack `yaml:"auth_open_stack"`
 	zoneID         string
-	recordID       string
 	dnsDescription string
+	mu             sync.Mutex
 }
 
 type AuthOpenStack struct {
-	RegionName         string
-	TenantID           string
-	IdentityApiVersion string
-	Password           string
-	AuthURL            string
-	Username           string
-	TenantName         string
-	EndpointType       string
+	RegionName         string `yaml:"region_name"`
+	TenantID           string `yaml:"tenant_id"`
+	IdentityApiVersion string `yaml:"identity_api_version"`
+	Password           string `yaml:"password"`
+	AuthURL            string `yaml:"auth_url"`
+	Username           string `yaml:"username"`
+	TenantName         string `yaml:"tenant_name"`
+	EndpointType       string `yaml:"endpoint_type"`
 }
 
 // GetRecords lists all the records in the zone.
@@ -33,6 +34,11 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 	err := p.auth(zone)
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
+	}
+
+	err = p.setZone(zone)
+	if err != nil {
+		return nil, fmt.Errorf("cannot set ZONE: %v", err)
 	}
 
 	listOpts := recordsets.ListOpts{
@@ -60,6 +66,11 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
 
+	err = p.setZone(zone)
+	if err != nil {
+		return nil, fmt.Errorf("cannot set ZONE: %v", err)
+	}
+
 	var appendedRecords []libdns.Record
 
 	for _, record := range records {
@@ -80,6 +91,11 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
 
+	err = p.setZone(zone)
+	if err != nil {
+		return nil, fmt.Errorf("cannot set ZONE: %v", err)
+	}
+
 	var deletedRecords []libdns.Record
 
 	for _, record := range records {
@@ -88,13 +104,11 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 			return nil, err
 		}
 
-		p.setRecordID(recordID)
-
 		if recordID == "" {
 			return nil, errors.New("recordID does not exist")
 		}
 
-		err = p.deleteRecord(record, zone)
+		err = p.deleteRecord(recordID)
 		if err != nil {
 			return nil, err
 		}
@@ -112,6 +126,11 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
 
+	err = p.setZone(zone)
+	if err != nil {
+		return nil, fmt.Errorf("cannot set ZONE: %v", err)
+	}
+
 	var setRecords []libdns.Record
 
 	for _, record := range records {
@@ -120,13 +139,11 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 			return nil, err
 		}
 
-		p.setRecordID(recordID)
-
 		if recordID == "" {
 			return nil, errors.New("recordID does not exist")
 		}
 
-		err = p.updateRecord(record, zone)
+		err = p.updateRecord(record, recordID)
 		if err != nil {
 			return setRecords, err
 		}
