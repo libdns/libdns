@@ -8,7 +8,6 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/dns/v2/recordsets"
 	"github.com/gophercloud/gophercloud/openstack/dns/v2/zones"
 	"github.com/libdns/libdns"
-	"os"
 	"time"
 )
 
@@ -100,42 +99,6 @@ func (p *Provider) deleteRecord(recordID string) error {
 	return nil
 }
 
-func (p *Provider) exportEnvVariables() error {
-	err := os.Setenv("OS_REGION_NAME", p.AuthOpenStack.RegionName)
-	if err != nil {
-		return fmt.Errorf("cannot set environment variable: %v", err)
-	}
-	err = os.Setenv("OS_TENANT_ID", p.AuthOpenStack.TenantID)
-	if err != nil {
-		return fmt.Errorf("cannot set environment variable: %v", err)
-	}
-	err = os.Setenv("OS_IDENTITY_API_VERSION", p.AuthOpenStack.IdentityApiVersion)
-	if err != nil {
-		return fmt.Errorf("cannot set environment variable: %v", err)
-	}
-	err = os.Setenv("OS_PASSWORD", p.AuthOpenStack.Password)
-	if err != nil {
-		return fmt.Errorf("cannot set environment variable: %v", err)
-	}
-	err = os.Setenv("OS_AUTH_URL", p.AuthOpenStack.AuthURL)
-	if err != nil {
-		return fmt.Errorf("cannot set environment variable: %v", err)
-	}
-	err = os.Setenv("OS_USERNAME", p.AuthOpenStack.Username)
-	if err != nil {
-		return fmt.Errorf("cannot set environment variable: %v", err)
-	}
-	err = os.Setenv("OS_TENANT_NAME", p.AuthOpenStack.TenantName)
-	if err != nil {
-		return fmt.Errorf("cannot set environment variable: %v", err)
-	}
-	err = os.Setenv("OS_ENDPOINT_TYPE", p.AuthOpenStack.EndpointType)
-	if err != nil {
-		return fmt.Errorf("cannot set environment variable: %v", err)
-	}
-	return nil
-}
-
 func (p *Provider) isAuth() (bool, error) {
 	if p.dnsClient != nil {
 		_, err := p.dnsClient.GetAuthResult().ExtractTokenID()
@@ -157,14 +120,11 @@ func (p *Provider) auth() error {
 		return nil
 	}
 
-	err = p.exportEnvVariables()
-	if err != nil {
-		return err
-	}
-
-	opts, err := openstack.AuthOptionsFromEnv()
-	if err != nil {
-		return err
+	opts := gophercloud.AuthOptions{
+		IdentityEndpoint: p.AuthOpenStack.AuthURL,
+		Username:         p.AuthOpenStack.Username,
+		Password:         p.AuthOpenStack.Password,
+		TenantID:         p.AuthOpenStack.TenantID,
 	}
 
 	provider, err := openstack.AuthenticatedClient(opts)
@@ -173,7 +133,7 @@ func (p *Provider) auth() error {
 	}
 
 	dnsClient, err := openstack.NewDNSV2(provider, gophercloud.EndpointOpts{
-		Region: os.Getenv("OS_REGION_NAME"),
+		Region: p.AuthOpenStack.RegionName,
 	})
 	if err != nil {
 		return err
