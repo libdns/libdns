@@ -53,12 +53,6 @@ func main() {
 	}
 	zone := os.Getenv("AZURE_DNS_ZONE_FQDN")
 
-	// Invoke authentication and store client to instance
-	if err := provider.NewClient(); err != nil {
-		fmt.Printf("%v\n", err)
-		return
-	}
-
 	// List existing records
 	fmt.Printf("List existing records\n")
 	currentRecords, err := provider.GetRecords(context.TODO(), zone)

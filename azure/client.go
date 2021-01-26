@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
@@ -14,27 +15,42 @@ import (
 	"github.com/libdns/libdns"
 )
 
-// NewClient invokes authentication and store client to the provider instance.
-func (p *Provider) NewClient() error {
-	recordSetsClient := dns.NewRecordSetsClient(p.SubscriptionId)
+// Client is an abstraction of RecordSetsClient for Azure DNS
+type Client struct {
+	azureClient *dns.RecordSetsClient
+	mutex       sync.Mutex
+}
 
-	clientCredentialsConfig := auth.NewClientCredentialsConfig(p.ClientId, p.ClientSecret, p.TenantId)
-	authorizer, err := clientCredentialsConfig.Authorizer()
-	if err != nil {
-		return err
+// setupClient invokes authentication and store client to the provider instance.
+func (p *Provider) setupClient() error {
+	if p.client.azureClient == nil {
+		recordSetsClient := dns.NewRecordSetsClient(p.SubscriptionId)
+
+		clientCredentialsConfig := auth.NewClientCredentialsConfig(p.ClientId, p.ClientSecret, p.TenantId)
+		authorizer, err := clientCredentialsConfig.Authorizer()
+		if err != nil {
+			return err
+		}
+
+		recordSetsClient.Authorizer = authorizer
+		p.client.azureClient = &recordSetsClient
 	}
-
-	recordSetsClient.Authorizer = authorizer
-	p.client = &recordSetsClient
 
 	return nil
 }
 
 // getRecords gets all records in specified zone on Azure DNS.
 func (p *Provider) getRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
+	p.client.mutex.Lock()
+	defer p.client.mutex.Unlock()
+
+	if err := p.setupClient(); err != nil {
+		return nil, err
+	}
+
 	var recordSets []*dns.RecordSet
 
-	pages, err := p.client.ListAllByDNSZone(
+	pages, err := p.client.azureClient.ListAllByDNSZone(
 		ctx,
 		p.ResourceGroupName,
 		strings.TrimSuffix(zone, "."),
@@ -71,12 +87,15 @@ func (p *Provider) updateRecord(ctx context.Context, zone string, record libdns.
 // deleteRecord deletes an existing records.
 // Regardless of the value of the record, if the name and type match, the record will be deleted.
 func (p *Provider) deleteRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
+	p.client.mutex.Lock()
+	defer p.client.mutex.Unlock()
+
 	recordType, err := convertStringToRecordType(record.Type)
 	if err != nil {
 		return record, err
 	}
 
-	_, err = p.client.Delete(
+	_, err = p.client.azureClient.Delete(
 		ctx,
 		p.ResourceGroupName,
 		strings.TrimSuffix(zone, "."),
@@ -94,6 +113,13 @@ func (p *Provider) deleteRecord(ctx context.Context, zone string, record libdns.
 // createOrUpdateRecord creates or updates a record.
 // The behavior depends on the value of ifNoneMatch, set to "*" to allow to create a new record but prevent updating an existing record.
 func (p *Provider) createOrUpdateRecord(ctx context.Context, zone string, record libdns.Record, ifNoneMatch string) (libdns.Record, error) {
+	p.client.mutex.Lock()
+	defer p.client.mutex.Unlock()
+
+	if err := p.setupClient(); err != nil {
+		return record, err
+	}
+
 	recordType, err := convertStringToRecordType(record.Type)
 	if err != nil {
 		return record, err
@@ -104,7 +130,7 @@ func (p *Provider) createOrUpdateRecord(ctx context.Context, zone string, record
 		return record, err
 	}
 
-	_, err = p.client.CreateOrUpdate(
+	_, err = p.client.azureClient.CreateOrUpdate(
 		ctx,
 		p.ResourceGroupName,
 		strings.TrimSuffix(zone, "."),

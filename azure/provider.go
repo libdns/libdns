@@ -3,7 +3,6 @@ package azure
 import (
 	"context"
 
-	"github.com/Azure/azure-sdk-for-go/services/dns/mgmt/2018-05-01/dns"
 	"github.com/libdns/libdns"
 )
 
@@ -14,7 +13,7 @@ type Provider struct {
 	ClientSecret      string `json:"client_secret,omitempty"`
 	SubscriptionId    string `json:"subscription_id,omitempty"`
 	ResourceGroupName string `json:"resource_group_name,omitempty"`
-	client            *dns.RecordSetsClient
+	client            Client
 }
 
 // GetRecords lists all the records in the zone.
