@@ -9,13 +9,14 @@ import (
 	"github.com/libdns/libdns"
 )
 
+// Provider implements the libdns interfaces for OpenStack Designate.
 type Provider struct {
 	dnsClient      *gophercloud.ServiceClient
 	AuthOpenStack  AuthOpenStack `yaml:"auth_open_stack"`
 	zoneID         string
-	dnsDescription string
 }
 
+// AuthOpenStack contains credentials for OpenStack Designate.
 type AuthOpenStack struct {
 	RegionName         string `yaml:"region_name"`
 	TenantID           string `yaml:"tenant_id"`
