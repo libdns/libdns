@@ -12,9 +12,7 @@ import (
 
 // main shows how libdns works with Azure DNS.
 //
-// To make this example work, you have to speficy some required environment variables:
-// AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID,
-// AZURE_RESOURCE_GROUP_NAME, AZURE_DNS_ZONE_FQDN
+// In this example, the information required for authentication is passed as environment variables.
 func main() {
 
 	// Create new provider instance

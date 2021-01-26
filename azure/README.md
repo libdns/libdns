@@ -8,17 +8,17 @@ This package supports authentication using the **Client Credentials** (Azure AD 
 
 You will need to create a service principal using [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) or [Azure Portal](https://docs.microsoft.com/en-us/azure/active-directory/develop/howto-create-service-principal-portal), and assign the **DNS Zone Contributor** role to the service principal for the DNS zones that you want to manage.
 
-Then keep the following information to authenticate:
+Then keep the following information to pass to the `Provider` struct fields for authentication:
 
-* `AZURE_TENANT_ID`
+* `TenantId` (`json:"tenant_id"`)
 	* [Azure Active Directory] > [Properties] > [Tenant ID]
-* `AZURE_CLIENT_ID`
+* `ClientId` (`json:"client_id"`)
 	* [Azure Active Directory] > [App registrations] > Your Application > [Application ID]
-* `AZURE_CLIENT_SECRET`
+* `ClientSecret` (`json:"client_secret"`)
 	* [Azure Active Directory] > [App registrations] > Your Application > [Certificates & secrets] > [Client secrets] > [Value]
-* `AZURE_SUBSCRIPTION_ID`
+* `SubscriptionId` (`json:"subscription_id"`)
 	* [DNS zones] > Your Zone > [Subscription ID]
-* `AZURE_RESOURCE_GROUP_NAME`
+* `ResourceGroupName` (`json:"resource_group_name"`)
 	* [DNS zones] > Your Zone > [Resource group]
 
 ## Example
@@ -40,9 +40,7 @@ import (
 
 // main shows how libdns works with Azure DNS.
 //
-// To make this example work, you have to speficy some required environment variables:
-// AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID,
-// AZURE_RESOURCE_GROUP_NAME, AZURE_DNS_ZONE_FQDN
+// In this example, the information required for authentication is passed as environment variables.
 func main() {
 
 	// Create new provider instance
