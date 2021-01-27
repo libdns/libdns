@@ -32,12 +32,10 @@ type AuthOpenStack struct {
 
 // GetRecords lists all the records in the zone.
 func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
-	p.mu.Lock()
 	err := p.auth()
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
-	p.mu.Unlock()
 
 	err = p.setZone(zone)
 	if err != nil {
@@ -64,12 +62,10 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 // AppendRecords adds records to the zone and returns the records that were created.
 // Due to technical limitations of the LiveDNS API, it may affect the TTL of similar records
 func (p *Provider) AppendRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
-	p.mu.Lock()
 	err := p.auth()
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
-	p.mu.Unlock()
 
 	err = p.setZone(zone)
 	if err != nil {
@@ -91,12 +87,10 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 
 // DeleteRecords deletes records from the zone and returns the records that were deleted.
 func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
-	p.mu.Lock()
 	err := p.auth()
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
-	p.mu.Unlock()
 
 	err = p.setZone(zone)
 	if err != nil {
@@ -128,12 +122,10 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 // SetRecords sets the records in the zone, either by updating existing records or creating new ones, and returns the recordsthat were updated.
 // Due to technical limitations of the LiveDNS API, it may affect the TTL of similar records.
 func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
-	p.mu.Lock()
 	err := p.auth()
 	if err != nil {
 		return nil, fmt.Errorf("cannot authenticate to OpenStack Designate: %v", err)
 	}
-	p.mu.Unlock()
 
 	err = p.setZone(zone)
 	if err != nil {
