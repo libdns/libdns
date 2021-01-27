@@ -111,6 +111,9 @@ func (p *Provider) isAuth() (bool, error) {
 }
 
 func (p *Provider) auth() error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	authStatus, err := p.isAuth()
 	if err != nil {
 		return err
@@ -138,8 +141,6 @@ func (p *Provider) auth() error {
 	if err != nil {
 		return err
 	}
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	p.dnsClient = dnsClient
 
 	return nil
