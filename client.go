@@ -118,17 +118,17 @@ func (p *Provider) getZones(ctx context.Context) ([]zone, error) {
 }
 
 type record struct {
-	ExpandedData string
-	ID           int64
-	ZoneID       int64
-	Type         string
-	Name         string
-	Data         string
-	Priority     int64
-	Flags        int64
-	Tag          string
-	Weight       int64
-	Port         int64
+	ExpandedData string `json:"expandedData,omitempty"`
+	ID           int64  `json:"id,omitempty"`
+	ZoneID       int64  `json:"zoneID,omitempty"`
+	Type         string `json:"type,omitempty"`
+	Name         string `json:"name,omitempty"`
+	Data         string `json:"data,omitempty"`
+	Priority     int64  `json:"priority,omitempty"`
+	Flags        int64  `json:"flags,omitempty"`
+	Tag          string `json:"tag,omitempty"`
+	Weight       int64  `json:"weight,omitempty"`
+	Port         int64  `json:"port,omitempty"`
 }
 
 func (r *record) toLibdnsRecord() libdns.Record {
