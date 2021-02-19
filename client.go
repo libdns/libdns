@@ -141,7 +141,7 @@ func (r *record) toLibdnsRecord() libdns.Record {
 	}
 }
 
-func fromLibdnsRecord(rec *libdns.Record) (*record, error) {
+func fromLibdnsRecord(zone string, rec *libdns.Record) (*record, error) {
 	var (
 		id  int64
 		err error
@@ -155,7 +155,7 @@ func fromLibdnsRecord(rec *libdns.Record) (*record, error) {
 	return &record{
 		ID:   id,
 		Type: rec.Type,
-		Name: rec.Name,
+		Name: strings.TrimSuffix(rec.Name, "."+strings.TrimSuffix(zone, ".")),
 		Data: rec.Value,
 	}, nil
 }

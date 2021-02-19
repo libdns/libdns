@@ -39,7 +39,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, recs []libdns
 	}
 	results := []libdns.Record{}
 	for _, r := range recs {
-		dynv6Rec, err := fromLibdnsRecord(&r)
+		dynv6Rec, err := fromLibdnsRecord(zone, &r)
 		if err != nil {
 			return results, err
 		}
@@ -76,7 +76,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, recs []libdns.Re
 			}
 		} else {
 			//no record found, add a new one
-			newRecord, err := fromLibdnsRecord(&r)
+			newRecord, err := fromLibdnsRecord(zone, &r)
 			if err != nil {
 				return results, err
 			}
