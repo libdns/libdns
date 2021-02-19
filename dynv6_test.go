@@ -20,6 +20,20 @@ func init() {
 	flag.StringVar(&p.Token, "token", "", "dynv6 REST API token")
 }
 
+func TestErrorLog(t *testing.T) {
+	zone, err := p.addRecord(ctx, 0, &record{
+		Name: "test",
+		Data: "test",
+		Type: "TXT",
+	})
+	if err != nil {
+		t.Log(err)
+	} else {
+		t.Log(zone)
+		t.Fail()
+	}
+}
+
 func TestGetZoneByName(t *testing.T) {
 	zones, err := p.getZones(ctx)
 	if err != nil {
