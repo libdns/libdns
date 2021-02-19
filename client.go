@@ -10,6 +10,7 @@ import (
 	"net/http"
 	urlutil "net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/libdns/libdns"
@@ -74,6 +75,8 @@ func (p *Provider) getZone(req *http.Request) (*zone, error) {
 }
 
 func (p *Provider) getZoneByName(ctx context.Context, zoneName string) (*zone, error) {
+	// remove trailing dot
+	zoneName = strings.TrimSuffix(zoneName, ".")
 	req, err := p.newRequest(ctx, "GET", "https://dynv6.com/api/v2/zones/by-name/"+zoneName, nil)
 	if err != nil {
 		return nil, err
