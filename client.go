@@ -31,11 +31,45 @@ var httpClient http.Client = http.Client{
 
 func checkStatusCode(resp *http.Response) error {
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("Unexpected status code: %s, could not read response: %w", resp.Status, err)
+		var (
+			reqJSONString  string
+			respBodyString string
+			reqBodyObject  interface{}
+		)
+		if resp.Request.Body != nil {
+			if reqBody, err := resp.Request.GetBody(); err == nil {
+				defer reqBody.Close()
+				if reqBodyBytes, err := ioutil.ReadAll(reqBody); err == nil {
+					if err = json.Unmarshal(reqBodyBytes, &reqBodyObject); err != nil {
+						reqBodyObject = err.Error()
+					}
+				} else {
+					reqBodyObject = err.Error()
+				}
+			} else {
+				reqBodyObject = err.Error()
+			}
 		}
-		return fmt.Errorf("Unexpected status code: %s, response: %s", resp.Status, string(bodyBytes))
+		req := struct {
+			Method string      `json:"method"`
+			URL    string      `json:"url"`
+			Body   interface{} `json:"body"`
+		}{
+			Method: resp.Request.Method,
+			URL:    resp.Request.URL.String(),
+			Body:   reqBodyObject,
+		}
+		if reqJSONBytes, err := json.Marshal(req); err == nil {
+			reqJSONString = string(reqJSONBytes)
+		} else {
+			reqJSONString = err.Error()
+		}
+		if respBodyBytes, err := ioutil.ReadAll(resp.Body); err == nil {
+			respBodyString = string(respBodyBytes)
+		} else {
+			respBodyString = err.Error()
+		}
+		return fmt.Errorf("Unexpected status code: %s, Request: %s, Response: %s", resp.Status, reqJSONString, respBodyString)
 	}
 	return nil
 }
