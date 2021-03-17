@@ -3,7 +3,8 @@ Metaname provider for [`libdns`](https://github.com/libdns/libdns)
 
 [![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/metaname)
 
-This package implements the [libdns interfaces](https://github.com/libdns/libdns) for Metaname, allowing you to manage DNS records.
+This package implements the [libdns interfaces](https://github.com/libdns/libdns) for [Metaname](https://metaname.net/), allowing
+you to manage DNS records.
 
 Create a provider with:
 
