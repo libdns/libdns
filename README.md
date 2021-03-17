@@ -21,3 +21,16 @@ There are three main limitations in the provider currently:
 * Does not currently support priorities, as Metaname treats these as separate fields not represented in the libdns Record type.
 * Metaname fails with no message for certain erroneous configurations (e.g. additional record with existing CNAME at same name),
   and these are reported only with Metaname's "Internal error" code.
+
+Samples
+-------
+
+There are sample programs using the provider in the samples/ directory. These are usable programs to list/add/delete records, using
+three environment variables for configuration:
+
+* api_key
+* account_reference
+* api_endpoint (optional; default is the test endpoint)
+
+A fourth program, `exercise`, uses the full range of functionality to retrieve, add, update, and remove records in a zone. This one
+makes non-configurable destructive changes and is only suitable as a basis or for testing.
