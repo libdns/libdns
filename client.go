@@ -21,7 +21,7 @@ type Client struct {
 // getClient assigns the namedotcom client to the provider
 func (p *Provider) getClient() error {
 	if p.client == nil {
-		p.client = NewNameDotComClient(p.APIToken, p.User, p.Endpoint)
+		p.client = NewNameDotComClient(p.APIToken, p.User, p.APIUrl)
 	}
 	return nil
 }

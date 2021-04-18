@@ -96,9 +96,9 @@ func (n *nameDotCom) doRequest(ctx context.Context, method, endpoint string, pos
 }
 
 // NewNameDotComClient returns a new name.com client struct
-func  NewNameDotComClient(token, user, endpoint string) *nameDotCom {
+func  NewNameDotComClient(token, user, apiUrl string) *nameDotCom {
 	return &nameDotCom{
-		Server: endpoint,
+		Server: apiUrl,
 		User:   user,
 		Token:  token,
 		Client: &http.Client{Timeout: 10 * time.Second},

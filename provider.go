@@ -14,7 +14,7 @@ type Provider struct {
 	Client
 	APIToken string `json:"api_token,omitempty"`
 	User string `json:"user,omitempty"`
-	Endpoint string `json:"endpoint,omitempty"`
+	APIUrl string `json:"api_url,omitempty"`
 }
 
 // GetRecords lists all the records in the zone.

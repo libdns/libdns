@@ -10,7 +10,7 @@ This package implements the [libdns interfaces](https://github.com/libdns/libdns
 To authenticate you need to supply the following arguments to the provider: 
 1. name.com **user name**.
 2. name.com **api token**.
-3. name.com api endpoint ( either **api.name** or **api.dev.name**)
+3. name.com **api url** ( e.g. https://api.name.com)
 
 ## Example
 
@@ -33,9 +33,9 @@ func main() {
 
 	// configure the name.com DNS provider 
 	provider := namedotcom.Provider{
-		APIToken: "super_secret_token",
-		User:     "user",
-		Endpoint: "https://api.name.com",
+		APIToken : "super_secret_token",
+		User :     "user",
+		APIUrl : "https://api.name.com",
 	}
 
 	// list records

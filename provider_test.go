@@ -21,7 +21,7 @@ func init() {
 	p = &Provider{
 		APIToken: os.Getenv("api_key"),
 		User:     os.Getenv("user_name"),
-		Endpoint: "https://api.name.com",
+		APIUrl: "https://api.name.com",
 	}
 
 	testRecords = []libdns.Record{{
