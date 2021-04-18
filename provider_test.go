@@ -10,10 +10,10 @@ import (
 )
 
 var (
-	p           *Provider
-	ctx         context.Context = context.Background()
-	zone        string
-	testRecords []libdns.Record
+	p              *Provider
+	ctx            = context.Background()
+	zone           string
+	testRecords    []libdns.Record
 	testSetRecords []libdns.Record
 )
 
@@ -24,19 +24,19 @@ func init() {
 		Endpoint: "https://api.name.com",
 	}
 
-	testRecords = []libdns.Record{libdns.Record{
+	testRecords = []libdns.Record{{
 		Type:  "A",
 		Name:  "TestRecord",
 		Value: "192.168.1.33",
 		TTL:   time.Duration(300),
-	},
+		},
 	}
-	testSetRecords = []libdns.Record{libdns.Record{
+	testSetRecords = []libdns.Record{{
 		Type:  "A",
 		Name:  "TestRecord",
 		Value: "192.168.2.33",
 		TTL:   time.Duration(300),
-	},
+		},
 	}
 	zone = os.Getenv("test_zone")
 }

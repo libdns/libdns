@@ -48,10 +48,6 @@ type (
 )
 
 type (
-	// emptyResponse is an empty response used for DELETE endpoints.
-
-	emptyResponse struct{}
-
 	// errorResponse is what is returned if the HTTP status code is not 200.
 	errorResponse struct {
 		// Message is the error message.
