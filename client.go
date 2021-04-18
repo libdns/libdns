@@ -115,12 +115,19 @@ func (p *Provider) deleteRecord(ctx context.Context, zone string, record libdns.
 // updateRecord replaces a record with the target record that is passed
 func (p *Provider) updateRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
 	p.getClient()
+	var (
+		updateTarget nameDotComRecord
+		method = "PUT"
+	)
 
 	if record.ID == "" {
-		record.ID, _ = p.getRecordId(ctx, zone, record)
+		var err error
+		record.ID, err = p.getRecordId(ctx, zone, record)
+		if err != nil {
+			method = "POST"
+		}
 	}
 
-	var updateTarget nameDotComRecord
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -134,7 +141,7 @@ func (p *Provider) updateRecord(ctx context.Context, zone string, record libdns.
 		return libdns.Record{}, err
 	}
 
-	body, err := p.client.doRequest(ctx, "PUT", endpoint, post)
+	body, err := p.client.doRequest(ctx, method, endpoint, post)
 	if err != nil {
 		return libdns.Record{}, err
 	}
