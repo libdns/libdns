@@ -15,23 +15,16 @@ import (
 type (
 	nameDotCom struct {
 		Server string `json:"server,omitempty"`
-		User   string`json:"user,omitempty"`
-		Token  string`json:"token,omitempty"`
+		User   string `json:"user,omitempty"`
+		Token  string `json:"token,omitempty"`
 		Client *http.Client
-	}
-
-	// listRecordsRequest contains the request fields for the name.com api
-	listRecordsRequest struct {
-		DomainName string `json:"domainName,omitempty"`
-		PerPage    int32  `json:"perPage,omitempty"`
-		Page       int32  `json:"page,omitempty"`
 	}
 
 	// listRecordsResponse contains the response for the ListRecords function.
 	listRecordsResponse struct {
 		Records  []*nameDotComRecord `json:"records,omitempty"`
-		NextPage int32            `json:"nextPage,omitempty"`
-		LastPage int32            `json:"lastPage,omitempty"`
+		NextPage int32               `json:"nextPage,omitempty"`
+		LastPage int32               `json:"lastPage,omitempty"`
 	}
 
 	// nameDotComRecord is an individual DNS resource record for name.com.
@@ -57,7 +50,6 @@ type (
 	}
 )
 
-
 // Error errorResponse should implement the error interface
 func (er errorResponse) Error() string {
 	return er.Message + ": " + er.Details
@@ -74,7 +66,6 @@ func (n *nameDotCom) errorResponse(resp *http.Response) error {
 	return errors.WithStack(er)
 }
 
-
 func (n *nameDotCom) doRequest(ctx context.Context, method, endpoint string, post io.Reader) (io.Reader, error) {
 	uri := n.Server + endpoint
 	req, err := http.NewRequestWithContext(ctx, method, uri, post)
@@ -89,14 +80,14 @@ func (n *nameDotCom) doRequest(ctx context.Context, method, endpoint string, pos
 		return nil, err
 	}
 	if resp.StatusCode != 200 {
-		return nil,n.errorResponse(resp)
+		return nil, n.errorResponse(resp)
 	}
 
 	return resp.Body, nil
 }
 
 // NewNameDotComClient returns a new name.com client struct
-func  NewNameDotComClient(token, user, apiUrl string) *nameDotCom {
+func NewNameDotComClient(token, user, apiUrl string) *nameDotCom {
 	return &nameDotCom{
 		Server: apiUrl,
 		User:   user,
@@ -108,7 +99,7 @@ func  NewNameDotComClient(token, user, apiUrl string) *nameDotCom {
 // fromLibDNSRecord maps a name.com record from a libdns record
 func (n *nameDotComRecord) fromLibDNSRecord(record libdns.Record) {
 	var id int64
-	if record.ID !=  "" {
+	if record.ID != "" {
 		id, _ = strconv.ParseInt(record.ID, 10, 32)
 	}
 	n.ID = int32(id)
@@ -126,6 +117,6 @@ func (n *nameDotComRecord) toLibDNSRecord() libdns.Record {
 		Type:  n.Type,
 		Name:  n.Host,
 		Value: n.Answer,
-		TTL: time.Duration(n.TTL) * time.Second,
+		TTL:   time.Duration(n.TTL) * time.Second,
 	}
 }

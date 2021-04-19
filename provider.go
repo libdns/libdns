@@ -8,13 +8,12 @@ import (
 	"github.com/libdns/libdns"
 )
 
-
 // Provider implements the libdns interface for namedotcom
 type Provider struct {
 	Client
 	APIToken string `json:"api_token,omitempty"`
-	User string `json:"user,omitempty"`
-	APIUrl string `json:"api_url,omitempty"`
+	User     string `json:"user,omitempty"`
+	APIUrl   string `json:"api_url,omitempty"`
 }
 
 // GetRecords lists all the records in the zone.
@@ -32,7 +31,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 	var appendedRecords []libdns.Record
 
 	for _, record := range records {
-		newRecord, err := p.addRecord(ctx, zone, record)
+		newRecord, err := p.upsertRecord(ctx, zone, record)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +47,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	var setRecords []libdns.Record
 
 	for _, record := range records {
-		setRecord, err := p.updateRecord(ctx, zone, record)
+		setRecord, err := p.upsertRecord(ctx, zone, record)
 		if err != nil {
 			return setRecords, err
 		}
@@ -57,7 +56,6 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 
 	return setRecords, nil
 }
-
 
 // DeleteRecords deletes the records from the zone. It returns the records that were deleted.
 func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {

@@ -7,13 +7,12 @@ import (
 	"fmt"
 	"github.com/libdns/libdns"
 	"io"
-	"net/url"
 	"sync"
 )
 
 type Client struct {
 	client *nameDotCom
-	mutex sync.Mutex
+	mutex  sync.Mutex
 }
 
 // getClient assigns the namedotcom client to the provider
@@ -32,29 +31,24 @@ func (p *Provider) listAllRecords(ctx context.Context, zone string) ([]libdns.Re
 	_ = p.getClient()
 
 	var (
-		err error
 		records []libdns.Record
-		method = "GET"
-		body io.Reader
-		resp = &listRecordsResponse{}
-		values = url.Values{}
+		err     error
+
+		method  = "GET"
+		body    io.Reader
+		resp    = &listRecordsResponse{}
+		reqPage = 1
 	)
 
-	opts := listRecordsRequest{
-		DomainName: zone,
-		Page:       1,
-	}
+	for reqPage > 0 {
+		endpoint := fmt.Sprintf("/v4/domains/%s/records", zone)
 
-	for opts.Page > 0 {
-		endpoint := fmt.Sprintf("/v4/domains/%s/records", opts.DomainName)
-
-		if opts.Page != 0 {
-			values.Set("page", fmt.Sprintf("%d", opts.Page))
-			if body, err = p.client.doRequest(ctx, method, endpoint + "?" + values.Encode(), nil); err != nil{
+		if reqPage != 0 {
+			if body, err = p.client.doRequest(ctx, method, endpoint+"?page="+fmt.Sprint(reqPage), nil); err != nil {
 				return nil, err
 			}
 
-			if err = json.NewDecoder(body).Decode(resp); err != nil{
+			if err = json.NewDecoder(body).Decode(resp); err != nil {
 				return nil, err
 			}
 
@@ -62,28 +56,27 @@ func (p *Provider) listAllRecords(ctx context.Context, zone string) ([]libdns.Re
 				records = append(records, record.toLibDNSRecord())
 			}
 
-			opts.Page = resp.NextPage
+			reqPage = int(resp.NextPage)
 		}
 	}
 
 	return records, nil
 }
 
-
-
 // deleteRecord deletes a record from the zone
 func (p *Provider) deleteRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	_ =  p.getClient()
+	_ = p.getClient()
 
 	var (
-		err error
 		deletedRecord nameDotComRecord
-		body io.Reader
+		err           error
+
 		method = "DELETE"
-		post = &bytes.Buffer{}
+		body   io.Reader
+		post   = &bytes.Buffer{}
 	)
 
 	endpoint := fmt.Sprintf("/v4/domains/%s/records/%s", zone, record.ID)
@@ -104,70 +97,41 @@ func (p *Provider) deleteRecord(ctx context.Context, zone string, record libdns.
 	return deletedRecord.toLibDNSRecord(), nil
 }
 
-// updateRecord replaces a record with the target record that is passed
-func (p *Provider) updateRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
+// upsertRecord replaces a record with the target record or creates a new record if update target not found
+func (p *Provider) upsertRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
 	_ = p.getClient()
 
 	var (
-		updatedRecord nameDotComRecord
+		upsertedRecord nameDotComRecord
+		err            error
+
 		method = "PUT"
-		body io.Reader
-		post = &bytes.Buffer{}
-		err error
+		body   io.Reader
+		post   = &bytes.Buffer{}
 	)
+
+	if record.ID == "" {
+		method = "POST"
+	}
 
 	endpoint := fmt.Sprintf("/v4/domains/%s/records/%s", zone, record.ID)
 
-	updatedRecord.fromLibDNSRecord(record)
+	upsertedRecord.fromLibDNSRecord(record)
 
-	if err = json.NewEncoder(post).Encode(updatedRecord);err != nil {
+	if err = json.NewEncoder(post).Encode(upsertedRecord); err != nil {
 		return record, err
 	}
 
-	if body, err = p.client.doRequest(ctx, method, endpoint, post); err != nil{
+	if body, err = p.client.doRequest(ctx, method, endpoint, post); err != nil {
 		return record, err
 	}
 
-	if err = json.NewDecoder(body).Decode(&updatedRecord);err != nil {
+	if err = json.NewDecoder(body).Decode(&upsertedRecord); err != nil {
 		return record, err
 	}
 
-	return updatedRecord.toLibDNSRecord(), nil
-}
-
-// addRecord creates a new record in the zone.
-func (p *Provider) addRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	_ = p.getClient()
-
-	var (
-		err error
-		method = "POST"
-		body io.Reader
-		newRecord nameDotComRecord
-		endpoint = fmt.Sprintf("/v4/domains/%s/records", zone)
-		post = &bytes.Buffer{}
-	)
-
-
-	newRecord.fromLibDNSRecord(record)
-
-	if err := json.NewEncoder(post).Encode(newRecord); err != nil {
-		return record, err
-	}
-
-	if body, err = p.client.doRequest(ctx, method, endpoint, post); err != nil{
-		return record, err
-	}
-
-	if err = json.NewDecoder(body).Decode(&newRecord); err != nil{
-		return record, err
-	}
-
-	return newRecord.toLibDNSRecord(), nil
+	return upsertedRecord.toLibDNSRecord(), nil
 }

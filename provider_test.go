@@ -23,7 +23,7 @@ func init() {
 	p = &Provider{
 		APIToken: os.Getenv("api_key"),
 		User:     os.Getenv("user_name"),
-		APIUrl: "https://api.name.com",
+		APIUrl:   "https://api.name.com",
 	}
 
 	testRecords = []libdns.Record{{
@@ -31,14 +31,14 @@ func init() {
 		Name:  "TestRecord",
 		Value: "192.168.1.33",
 		TTL:   time.Duration(300),
-		},
+	},
 	}
 	testSetRecords = []libdns.Record{{
 		Type:  "A",
 		Name:  "TestRecord",
 		Value: "192.168.2.33",
 		TTL:   time.Duration(300),
-		},
+	},
 	}
 	zone = os.Getenv("test_zone")
 }
@@ -117,7 +117,7 @@ func TestProvider_SetRecords(t *testing.T) {
 			testName := strings.ToLower(testSetRecords[0].Name)
 			t.Log(rollingRecords)
 
-			for _, rec  := range  rollingRecords{
+			for _, rec := range rollingRecords {
 				if testName == rec.Name {
 					testSetRecords[0].ID = rec.ID
 				}
@@ -156,7 +156,7 @@ func TestProvider_DeleteRecords(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testName := strings.ToLower(testSetRecords[0].Name)
 
-			for _, rec  := range  rollingRecords{
+			for _, rec := range rollingRecords {
 				if testName == rec.Name {
 					testSetRecords[0].ID = rec.ID
 				}
