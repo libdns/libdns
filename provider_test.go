@@ -5,6 +5,7 @@ import (
 	"github.com/libdns/libdns"
 	"log"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -15,6 +16,7 @@ var (
 	zone           string
 	testRecords    []libdns.Record
 	testSetRecords []libdns.Record
+	rollingRecords []libdns.Record
 )
 
 func init() {
@@ -60,6 +62,7 @@ func TestProvider_GetRecords(t *testing.T) {
 				t.Errorf("GetRecords() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			} else {
+				rollingRecords = got
 				t.Log(got, err)
 			}
 		})
@@ -85,6 +88,7 @@ func TestProvider_AppendRecords(t *testing.T) {
 				t.Errorf("AppendRecords() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			} else {
+				rollingRecords = got
 				log.Println(got, err)
 			}
 		})
@@ -110,13 +114,27 @@ func TestProvider_SetRecords(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := p.SetRecords(ctx, zone, testSetRecords)
-			t.Log(got, err)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SetRecords() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			testName := strings.ToLower(testSetRecords[0].Name)
+			t.Log(rollingRecords)
+
+			for _, rec  := range  rollingRecords{
+				if testName == rec.Name {
+					testSetRecords[0].ID = rec.ID
+				}
+			}
+
+			if testSetRecords[0].ID != "" {
+				got, err := p.SetRecords(ctx, zone, testSetRecords)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("SetRecords() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				} else {
+					rollingRecords = got
+					t.Log(got, err)
+				}
 			} else {
-				log.Println(got, err)
+				t.Log("skipping, record id is not set.")
+				t.Skip()
 			}
 		})
 	}
@@ -136,12 +154,25 @@ func TestProvider_DeleteRecords(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := p.DeleteRecords(ctx, zone, testRecords)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("DeleteRecords() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			testName := strings.ToLower(testSetRecords[0].Name)
+
+			for _, rec  := range  rollingRecords{
+				if testName == rec.Name {
+					testSetRecords[0].ID = rec.ID
+				}
+			}
+
+			if testSetRecords[0].ID != "" {
+				got, err := p.DeleteRecords(ctx, zone, testSetRecords)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("DeleteRecords() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				} else {
+					t.Log(got, err)
+				}
 			} else {
-				t.Log(got, err)
+				t.Log("skipping, record id is not set.")
+				t.Skip()
 			}
 		})
 	}

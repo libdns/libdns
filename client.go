@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/libdns/libdns"
-	"github.com/pkg/errors"
 	"io"
 	"net/url"
-	"strings"
 	"sync"
 )
 
@@ -28,17 +26,19 @@ func (p *Provider) getClient() error {
 
 // listAllRecords returns all records for a zone
 func (p *Provider) listAllRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
-	var (
-		err error
-		records []libdns.Record
-		response *listRecordsResponse
-
-	)
-
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
 	_ = p.getClient()
+
+	var (
+		err error
+		records []libdns.Record
+		method = "GET"
+		body io.Reader
+		resp = &listRecordsResponse{}
+		values = url.Values{}
+	)
 
 	opts := listRecordsRequest{
 		DomainName: zone,
@@ -46,51 +46,36 @@ func (p *Provider) listAllRecords(ctx context.Context, zone string) ([]libdns.Re
 	}
 
 	for opts.Page > 0 {
-		if response, err = p.listRecordsPerPage(ctx, opts); err != nil{
-			return nil, err
-		}
+		endpoint := fmt.Sprintf("/v4/domains/%s/records", opts.DomainName)
 
-		for _, record := range response.Records {
-			records = append(records, record.toLibDNSRecord())
-		}
+		if opts.Page != 0 {
+			values.Set("page", fmt.Sprintf("%d", opts.Page))
+			if body, err = p.client.doRequest(ctx, method, endpoint + "?" + values.Encode(), nil); err != nil{
+				return nil, err
+			}
 
-		opts.Page = response.NextPage
+			if err = json.NewDecoder(body).Decode(resp); err != nil{
+				return nil, err
+			}
+
+			for _, record := range resp.Records {
+				records = append(records, record.toLibDNSRecord())
+			}
+
+			opts.Page = resp.NextPage
+		}
 	}
 
 	return records, nil
 }
 
 
-// listRecordsPerPage returns all the records for a given page
-func (p *Provider) listRecordsPerPage(ctx context.Context, opts listRecordsRequest) (*listRecordsResponse, error) {
-	var (
-		err error
-		method = "GET"
-		body io.Reader
-		resp = &listRecordsResponse{}
-		values = url.Values{}
-	)
-
-	endpoint := fmt.Sprintf("/v4/domains/%s/records", opts.DomainName)
-
-	if opts.Page != 0 {
-		values.Set("page", fmt.Sprintf("%d", opts.Page))
-	}
-
-	if body, err = p.client.doRequest(ctx, method, endpoint + "?" + values.Encode(), nil); err != nil{
-		return nil, err
-	}
-
-
-	if err = json.NewDecoder(body).Decode(resp); err != nil{
-		return nil, err
-	}
-
-	return resp, nil
-}
 
 // deleteRecord deletes a record from the zone
 func (p *Provider) deleteRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	_ =  p.getClient()
 
 	var (
@@ -100,13 +85,6 @@ func (p *Provider) deleteRecord(ctx context.Context, zone string, record libdns.
 		method = "DELETE"
 		post = &bytes.Buffer{}
 	)
-
-	if record.ID == "" {
-		record.ID ,_ = p.getRecordId(ctx, zone, record)
-	}
-
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
 
 	endpoint := fmt.Sprintf("/v4/domains/%s/records/%s", zone, record.ID)
 
@@ -128,6 +106,11 @@ func (p *Provider) deleteRecord(ctx context.Context, zone string, record libdns.
 
 // updateRecord replaces a record with the target record that is passed
 func (p *Provider) updateRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	_ = p.getClient()
+
 	var (
 		updatedRecord nameDotComRecord
 		method = "PUT"
@@ -135,18 +118,6 @@ func (p *Provider) updateRecord(ctx context.Context, zone string, record libdns.
 		post = &bytes.Buffer{}
 		err error
 	)
-
-	_ = p.getClient()
-
-	if record.ID == "" {
-		record.ID, err = p.getRecordId(ctx, zone, record)
-		if err != nil {
-			method = "POST"
-		}
-	}
-
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
 
 	endpoint := fmt.Sprintf("/v4/domains/%s/records/%s", zone, record.ID)
 
@@ -169,6 +140,11 @@ func (p *Provider) updateRecord(ctx context.Context, zone string, record libdns.
 
 // addRecord creates a new record in the zone.
 func (p *Provider) addRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	_ = p.getClient()
+
 	var (
 		err error
 		method = "POST"
@@ -177,11 +153,6 @@ func (p *Provider) addRecord(ctx context.Context, zone string, record libdns.Rec
 		endpoint = fmt.Sprintf("/v4/domains/%s/records", zone)
 		post = &bytes.Buffer{}
 	)
-
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	_ = p.getClient()
 
 
 	newRecord.fromLibDNSRecord(record)
@@ -199,21 +170,4 @@ func (p *Provider) addRecord(ctx context.Context, zone string, record libdns.Rec
 	}
 
 	return newRecord.toLibDNSRecord(), nil
-}
-
-// getRecordId returns the id for the target record if found
-func (p *Provider) getRecordId(ctx context.Context, zone string, record libdns.Record) (string, error) {
-	_ = p.getClient()
-
-	records, err := p.listAllRecords(ctx, zone)
-	if err != nil {
-		return "", err
-	}
-
-	for _, testRecord := range records {
-		if strings.ToLower(record.Name) == strings.ToLower(testRecord.Name) {
-			return testRecord.ID, nil
-		}
-	}
-	return "", errors.New("id not found")
 }
