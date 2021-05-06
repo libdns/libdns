@@ -1,3 +1,5 @@
-module github.com/libdns/libdns
+module github.com/libdns/template
 
-go 1.14
+go 1.16
+
+require github.com/libdns/libdns v0.2.0
