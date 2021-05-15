@@ -47,6 +47,9 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 	if err != nil {
 		return nil, err
 	}
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		return nil, fmt.Errorf("Received StatusCode %d from Leaseweb API", res.StatusCode)
+	}
 
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -105,6 +108,9 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 		if err != nil {
 			return nil, err
 		}
+		if res.StatusCode < 200 || res.StatusCode > 299 {
+			return nil, fmt.Errorf("Received StatusCode %d from Leaseweb API", res.StatusCode)
+		}
 
 		addedRecords = append(addedRecords, record)
 	}
@@ -157,6 +163,9 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	if err != nil {
 		return nil, err
 	}
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		return nil, fmt.Errorf("Received StatusCode %d from Leaseweb API", res.StatusCode)
+	}
 
 	return updatedRecords, nil
 }
@@ -182,6 +191,9 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 		defer res.Body.Close()
 		if err != nil {
 			return nil, err
+		}
+		if res.StatusCode < 200 || res.StatusCode > 299 {
+			return nil, fmt.Errorf("Received StatusCode %d from Leaseweb API", res.StatusCode)
 		}
 
 		deletedRecords = append(deletedRecords, record)
