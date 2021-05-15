@@ -26,7 +26,7 @@ import (
 type Provider struct {
 	// TODO: put config fields here (with snake_case json
 	// struct tags on exported fields), for example:
-	APIToken string `json:"api_token,omitempty"`
+	APIKey string `json:"api_token,omitempty"`
 	mutex    sync.Mutex
 }
 
@@ -55,7 +55,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		return nil, err
 	}
 
-	req.Header.Add("X-LSW-Auth", p.APIToken)
+	req.Header.Add("X-LSW-Auth", p.APIKey)
 
 	res, err := client.Do(req)
 	defer res.Body.Close()
@@ -113,7 +113,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 			return nil, err
 		}
 
-		req.Header.Add("X-LSW-Auth", p.APIToken)
+		req.Header.Add("X-LSW-Auth", p.APIKey)
 
 		res, err := client.Do(req)
 		defer res.Body.Close()
@@ -165,7 +165,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 		return nil, err
 	}
 
-	req.Header.Add("X-LSW-Auth", p.APIToken)
+	req.Header.Add("X-LSW-Auth", p.APIKey)
 
 	res, err := client.Do(req)
 	defer res.Body.Close()
@@ -191,7 +191,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 			return nil, err
 		}
 
-		req.Header.Add("X-LSW-Auth", p.APIToken)
+		req.Header.Add("X-LSW-Auth", p.APIKey)
 
 		res, err := client.Do(req)
 		defer res.Body.Close()
