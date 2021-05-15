@@ -24,19 +24,6 @@ type Provider struct {
 	mutex  sync.Mutex
 }
 
-// Structs for easy json marshalling.
-// Only declare fields that are used.
-type LeasewebRecordSet struct {
-	Name    string   `json:"name"`
-	Type    string   `json:"type"`
-	Content []string `json:"content"`
-	TTL     int      `json:"ttl"`
-}
-
-type LeasewebRecordSets struct {
-	ResourceRecordSets []LeasewebRecordSet `json:"resourceRecordSets"`
-}
-
 // GetRecords lists all the records in the zone.
 func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
 	p.mutex.Lock()
