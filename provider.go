@@ -17,6 +17,10 @@ import (
 	"github.com/libdns/libdns"
 )
 
+const (
+	LeasewebApiKeyHeader = "X-LSW-Auth"
+)
+
 // Provider facilitates DNS record manipulation with Leaseweb.
 type Provider struct {
 	// Leasewebs API key. Generate one in the Leaseweb customer portal -> Administration -> API Key
@@ -36,7 +40,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		return nil, err
 	}
 
-	req.Header.Add("X-LSW-Auth", p.APIKey)
+	req.Header.Add(LeasewebApiKeyHeader, p.APIKey)
 
 	res, err := client.Do(req)
 	defer res.Body.Close()
@@ -94,7 +98,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 			return nil, err
 		}
 
-		req.Header.Add("X-LSW-Auth", p.APIKey)
+		req.Header.Add(LeasewebApiKeyHeader, p.APIKey)
 
 		res, err := client.Do(req)
 		defer res.Body.Close()
@@ -146,7 +150,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 		return nil, err
 	}
 
-	req.Header.Add("X-LSW-Auth", p.APIKey)
+	req.Header.Add(LeasewebApiKeyHeader, p.APIKey)
 
 	res, err := client.Do(req)
 	defer res.Body.Close()
@@ -172,7 +176,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 			return nil, err
 		}
 
-		req.Header.Add("X-LSW-Auth", p.APIKey)
+		req.Header.Add(LeasewebApiKeyHeader, p.APIKey)
 
 		res, err := client.Do(req)
 		defer res.Body.Close()
