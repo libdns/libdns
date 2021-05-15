@@ -1,26 +1,37 @@
-**DEVELOPER INSTRUCTIONS:**
-
-This repo is a template for developers to use when creating new [libdns](https://github.com/libdns/libdns) provider implementations.
-
-Be sure to update:
-
-- The package name
-- The Go module name in go.mod
-- The latest `libdns/libdns` version in go.mod
-- All comments and documentation, including README below and godocs
-- License (must be compatible with Apache/MIT)
-- All "TODO:"s is in the code
-- All methods that currently do nothing
-
-Remove this section from the readme before publishing.
-
----
-
-\<PROVIDER NAME\> for [`libdns`](https://github.com/libdns/libdns)
+Leaseweb provider for [`libdns`](https://github.com/libdns/libdns)
 =======================
 
-[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/TODO:PROVIDER_NAME)
+[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/leaseweb)
 
-This package implements the [libdns interfaces](https://github.com/libdns/libdns) for \<PROVIDER\>, allowing you to manage DNS records.
+This package implements the [libdns interfaces](https://github.com/libdns/libdns) for [Leaseweb](https://leaseweb.com/), allowing you to manage DNS records.
 
-TODO: Show how to configure and use. Explain any caveats.
+## Usage
+
+Generate an API Key via the [Leaseweb customer portal](https://secure.leaseweb.com/); under Administration -> API Key.
+
+Place API Key in the configuration as `APIKey`.
+
+## Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"github.com/libdns/leaseweb"
+)
+
+func main() {
+	provider := leaseweb.Provider{APIKey: "<LEASEWEB API KEY>"}
+
+	records, err  := provider.GetRecords(context.TODO(), "example.com")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	for _, record := range records {
+		fmt.Printf("%s %v %s %s\n", record.Name, record.TTL.Seconds(), record.Type, record.Value)
+	}
+}
+```
