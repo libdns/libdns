@@ -31,7 +31,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 
 	client := &http.Client{}
 
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets", zone), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets", zone), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 		bodyBuffer := new(bytes.Buffer)
 		json.NewEncoder(bodyBuffer).Encode(body)
 
-		req, err := http.NewRequest("POST", fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets", zone), bodyBuffer)
+		req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets", zone), bodyBuffer)
 		if err != nil {
 			return nil, err
 		}
@@ -141,7 +141,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	bodyBuffer := new(bytes.Buffer)
 	json.NewEncoder(bodyBuffer).Encode(body)
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets", zone), bodyBuffer)
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets", zone), bodyBuffer)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 	var deletedRecords []libdns.Record
 
 	for _, record := range records {
-		req, err := http.NewRequest("DELETE", fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets/%s/%s", zone, record.Name, record.Type), nil)
+		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets/%s/%s", zone, record.Name, record.Type), nil)
 		if err != nil {
 			return nil, err
 		}
