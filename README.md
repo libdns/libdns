@@ -11,6 +11,20 @@ Generate an API Key via the [Leaseweb customer portal](https://secure.leaseweb.c
 
 Place API Key in the configuration as `APIKey`.
 
+## Compiling
+
+### Docker
+
+Run:
+
+```
+docker run --rm -it -v "$PWD":/usr/local/go/src/leaseweb -w /usr/local/go/src/leaseweb golang:1.16
+```
+
+which will drop you in an interactive bash prompt where `go` and friends are available.
+
+For example you can build the code with `go build`.
+
 ## Example
 
 ```go
