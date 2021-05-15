@@ -5,14 +5,14 @@
 package leaseweb
 
 import (
-	"context"
-	"fmt"
-	"net/http"
-	"io/ioutil"
-	"encoding/json"
-	"time"
-	"sync"
 	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"sync"
+	"time"
 
 	"github.com/libdns/libdns"
 )
@@ -21,7 +21,7 @@ import (
 type Provider struct {
 	// Leasewebs API key. Generate one in the Leaseweb customer portal -> Administration -> API Key
 	APIKey string `json:"api_token,omitempty"`
-	mutex    sync.Mutex
+	mutex  sync.Mutex
 }
 
 // Structs for easy json marshalling.
@@ -34,7 +34,7 @@ type LeasewebRecordSet struct {
 }
 
 type LeasewebRecordSets struct {
-  ResourceRecordSets []LeasewebRecordSet `json:"resourceRecordSets"`
+	ResourceRecordSets []LeasewebRecordSet `json:"resourceRecordSets"`
 }
 
 // GetRecords lists all the records in the zone.
@@ -42,7 +42,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	client := &http.Client{ }
+	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.leaseweb.com/hosting/v2/domains/%s/resourceRecordSets", zone), nil)
 	if err != nil {
@@ -87,16 +87,16 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	client := &http.Client{ }
+	client := &http.Client{}
 
 	var addedRecords []libdns.Record
 
 	for _, record := range records {
-		body := &LeasewebRecordSet {
-			Name: record.Name,
-			Type: record.Type,
-			Content: []string { record.Value },
-			TTL: int(record.TTL.Seconds()),
+		body := &LeasewebRecordSet{
+			Name:    record.Name,
+			Type:    record.Type,
+			Content: []string{record.Value},
+			TTL:     int(record.TTL.Seconds()),
 		}
 
 		bodyBuffer := new(bytes.Buffer)
@@ -127,7 +127,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	client := &http.Client{ }
+	client := &http.Client{}
 
 	var updatedRecords []libdns.Record
 
@@ -135,11 +135,11 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 
 	for _, record := range records {
 
-		recordSet := LeasewebRecordSet {
-			Name: record.Name,
-			Type: record.Type,
-			Content: []string { record.Value },
-			TTL: int(record.TTL.Seconds()),
+		recordSet := LeasewebRecordSet{
+			Name:    record.Name,
+			Type:    record.Type,
+			Content: []string{record.Value},
+			TTL:     int(record.TTL.Seconds()),
 		}
 
 		resourceRecordSets = append(resourceRecordSets, recordSet)
@@ -147,7 +147,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 		updatedRecords = append(updatedRecords, record)
 	}
 
-	body := &LeasewebRecordSets {
+	body := &LeasewebRecordSets{
 		ResourceRecordSets: resourceRecordSets,
 	}
 
@@ -175,7 +175,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	client := &http.Client{ }
+	client := &http.Client{}
 
 	var deletedRecords []libdns.Record
 
