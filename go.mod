@@ -1,4 +1,4 @@
-module github.com/libdns/template
+module github.com/libdns/leaseweb
 
 go 1.16
 
