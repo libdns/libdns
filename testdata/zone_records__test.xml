@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<methodResponse>
+    <params>
+        <param>
+            <value>
+                <array>
+                    <data>
+                        <value>
+                            <struct>
+                                <member>
+                                    <name>rdata</name>
+                                    <value>
+                                        <string>some text</string>
+                                    </value>
+                                </member>
+                                <member>
+                                    <name>priority</name>
+                                    <value>
+                                        <int>0</int>
+                                    </value>
+                                </member>
+                                <member>
+                                    <name>record_id</name>
+                                    <value>
+                                        <int>12345</int>
+                                    </value>
+                                </member>
+                                <member>
+                                    <name>ttl</name>
+                                    <value>
+                                        <int>300</int>
+                                    </value>
+                                </member>
+                                <member>
+                                    <name>type</name>
+                                    <value>
+                                        <string>TXT</string>
+                                    </value>
+                                </member>
+                            </struct>
+                        </value>
+                    </data>
+                </array>
+            </value>
+        </param>
+    </params>
+</methodResponse>

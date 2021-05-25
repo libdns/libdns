@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<methodResponse>
+    <params>
+        <param>
+            <value>
+                <array>
+                    <data>
+                        <value>
+                            <string>*</string>
+                        </value>
+                        <value>
+                            <string>@</string>
+                        </value>
+                        <value>
+                            <string>www</string>
+                        </value>
+                        <value>
+                            <string>cdn</string>
+                        </value>
+                    </data>
+                </array>
+            </value>
+        </param>
+    </params>
+</methodResponse>
