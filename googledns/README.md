@@ -51,12 +51,6 @@ func main() {
 	googleProvider := googledns.Provider{
 		Project: os.Getenv("GCP_PROJECT"),
 	}
-	err := googleProvider.NewService(context.TODO())
-	if err != nil {
-		fmt.Printf("error setting up Google Cloud DNS Service: %v\n", err)
-		return
-    }
-    
 	zone := `example.localhost`
 
 	// List existing records
