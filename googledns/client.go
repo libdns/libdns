@@ -16,14 +16,16 @@ const (
 	zoneMapTTL = time.Minute * 5
 )
 
-// NewService initializes the Google client for the provider using the specified JSON file for credentials if set.
-func (p *Provider) NewService(ctx context.Context) error {
+// newService initializes the Google client for the provider using the specified JSON file for credentials if set.
+func (p *Provider) newService(ctx context.Context) error {
 	var err error
-	scopeOption := option.WithScopes(dns.NdevClouddnsReadwriteScope)
-	if p.ServiceAccountJSON != "" {
-		p.service, err = dns.NewService(ctx, scopeOption, option.WithCredentialsFile(p.ServiceAccountJSON))
-	} else {
-		p.service, err = dns.NewService(ctx, scopeOption)
+	if p.service == nil {
+		scopeOption := option.WithScopes(dns.NdevClouddnsReadwriteScope)
+		if p.ServiceAccountJSON != "" {
+			p.service, err = dns.NewService(ctx, scopeOption, option.WithCredentialsFile(p.ServiceAccountJSON))
+		} else {
+			p.service, err = dns.NewService(ctx, scopeOption)
+		}
 	}
 	return err
 }
@@ -31,6 +33,12 @@ func (p *Provider) NewService(ctx context.Context) error {
 // getCloudDNSRecords returns all the records for the specified zone. It breaks up a single Google Record
 // with multiple Values into separate libdns.Records.
 func (p *Provider) getCloudDNSRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if err := p.newService(ctx); err != nil {
+		return nil, err
+	}
+
 	gcdZone, err := p.getCloudDNSZone(zone)
 	if err != nil {
 		return nil, err
@@ -51,6 +59,12 @@ func (p *Provider) getCloudDNSRecords(ctx context.Context, zone string) ([]libdn
 // setCloudDNSRecord will attempt to create a new Google Cloud DNS record set based on the libdns.Records or patch an existing one if
 // it already exists and patch is true.
 func (p *Provider) setCloudDNSRecord(ctx context.Context, zone string, values []libdns.Record, patch bool) ([]libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if err := p.newService(ctx); err != nil {
+		return nil, err
+	}
+
 	gcdZone, err := p.getCloudDNSZone(zone)
 	if err != nil {
 		return nil, err
@@ -85,6 +99,12 @@ func (p *Provider) setCloudDNSRecord(ctx context.Context, zone string, values []
 
 // deleteCloudDNSRecord will delete the specified record set.
 func (p *Provider) deleteCloudDNSRecord(ctx context.Context, zone, name, dnsType string) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if err := p.newService(ctx); err != nil {
+		return err
+	}
+
 	gcdZone, err := p.getCloudDNSZone(zone)
 	if err != nil {
 		return err
@@ -97,15 +117,12 @@ func (p *Provider) deleteCloudDNSRecord(ctx context.Context, zone, name, dnsType
 // getCloudDNSZone will return the Google Cloud DNS zone name for the specified zone. The data is cached
 // for five minutes to avoid repeated calls to the GCP API servers.
 func (p *Provider) getCloudDNSZone(zone string) (string, error) {
-	if time.Now().Sub(p.zoneMapLastUpdated) > zoneMapTTL {
-		p.zoneMap.Range(func(key interface{}, value interface{}) bool {
-			p.zoneMap.Delete(key)
-			return true
-		})
+	if p.zoneMap == nil || time.Now().Sub(p.zoneMapLastUpdated) > zoneMapTTL {
+		p.zoneMap = make(map[string]string)
 		zonesLister := p.service.ManagedZones.List(p.Project)
 		err := zonesLister.Pages(context.Background(), func(response *dns.ManagedZonesListResponse) error {
 			for _, zone := range response.ManagedZones {
-				p.zoneMap.Store(zone.DnsName, zone.Name)
+				p.zoneMap[zone.DnsName] = zone.Name
 			}
 			return nil
 		})
@@ -114,8 +131,8 @@ func (p *Provider) getCloudDNSZone(zone string) (string, error) {
 		}
 		p.zoneMapLastUpdated = time.Now()
 	}
-	if googleZone, ok := p.zoneMap.Load(zone); ok {
-		return googleZone.(string), nil
+	if zoneName, ok := p.zoneMap[zone]; ok {
+		return zoneName, nil
 	}
 	return "", fmt.Errorf("unable to find Google managaged zone for domain %s", zone)
 }

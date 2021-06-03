@@ -16,8 +16,9 @@ type Provider struct {
 	Project            string `json:"gcp_project,omitempty"`
 	ServiceAccountJSON string `json:"gcp_application_default,omitempty"`
 	service            *dns.Service
-	zoneMap            sync.Map
+	zoneMap            map[string]string
 	zoneMapLastUpdated time.Time
+	mutex              sync.Mutex
 }
 
 // GetRecords lists all the records in the zone.
