@@ -1,0 +1,155 @@
+{
+  "Initial": "IjIwMjEtMDUtMjZUMjE6MDY6MDguNjY3ODM0WiI=",
+  "Version": "0.2",
+  "Converter": {
+    "ClearHeaders": [
+      "^X-Goog-.*Encryption-Key$"
+    ],
+    "RemoveRequestHeaders": [
+      "^Authorization$",
+      "^Proxy-Authorization$",
+      "^Connection$",
+      "^Content-Type$",
+      "^Date$",
+      "^Host$",
+      "^Transfer-Encoding$",
+      "^Via$",
+      "^X-Forwarded-.*$",
+      "^X-Cloud-Trace-Context$",
+      "^X-Goog-Api-Client$",
+      "^X-Google-.*$",
+      "^X-Gfe-.*$"
+    ],
+    "RemoveResponseHeaders": [
+      "^X-Google-.*$",
+      "^X-Gfe-.*$"
+    ],
+    "ClearParams": null,
+    "RemoveParams": null
+  },
+  "Entries": [
+    {
+      "ID": "f9f0871fc594e758",
+      "Request": {
+        "Method": "GET",
+        "URL": "https://dns.googleapis.com/dns/v1/projects/test-project/managedZones?alt=json\u0026prettyPrint=false",
+        "Header": {
+          "Accept-Encoding": [
+            "gzip"
+          ],
+          "User-Agent": [
+            "google-api-go-client/0.5"
+          ]
+        },
+        "MediaType": "",
+        "BodyParts": [
+          ""
+        ]
+      },
+      "Response": {
+        "StatusCode": 200,
+        "Proto": "HTTP/1.1",
+        "ProtoMajor": 1,
+        "ProtoMinor": 1,
+        "Header": {
+          "Alt-Svc": [
+            "h3-29=\":443\"; ma=2592000,h3-T051=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\""
+          ],
+          "Cache-Control": [
+            "private"
+          ],
+          "Content-Encoding": [
+            "gzip"
+          ],
+          "Content-Type": [
+            "application/json; charset=UTF-8"
+          ],
+          "Date": [
+            "Wed, 26 May 2021 21:06:09 GMT"
+          ],
+          "Server": [
+            "ESF"
+          ],
+          "Vary": [
+            "Origin",
+            "X-Origin",
+            "Referer"
+          ],
+          "X-Content-Type-Options": [
+            "nosniff"
+          ],
+          "X-Frame-Options": [
+            "SAMEORIGIN"
+          ],
+          "X-Xss-Protection": [
+            "0"
+          ]
+        },
+        "Body": "H4sIAAAAAAAC/4WQsW7DMAxE/0VdI8GWU0f2NxQdmkwpMigSYRCVKMNUDARB/71Sl2RokYnA3cORvJuIluwE/pgIWIyfN0E2ghhFBs7SwwohzREoi43wxO93Uz2YCpOqALBbcM6YqEBFQF9mt+uMNqbvzbAzZui2Q1+sumYPywpLXSuIpQvp4qVv1ZTSFMCnaJFYuRRr9h3Qz4DuGbD9CzhthFvA1uMP+PulbnQrm1fZmoNuRt2OWisz9MeStSLjGQPma+HmyzmgK+oXUn249PTyUKv4Pv1n8Rty/gCeE3HhfgD+DjxCjgEAAA=="
+      }
+    },
+    {
+      "ID": "c885e02a7123a3c2",
+      "Request": {
+        "Method": "POST",
+        "URL": "https://dns.googleapis.com/dns/v1/projects/test-project/managedZones/test-development/rrsets?alt=json\u0026prettyPrint=false",
+        "Header": {
+          "Accept-Encoding": [
+            "gzip"
+          ],
+          "Content-Length": [
+            "99"
+          ],
+          "User-Agent": [
+            "google-api-go-client/0.5"
+          ]
+        },
+        "MediaType": "application/json",
+        "BodyParts": [
+          "eyJuYW1lIjoibGliZG5zLnRlc3QuZGV2ZWxvcG1lbnQuaW8uIiwicnJkYXRhcyI6WyJsaWJkbnMuZXhhbXBsZS5vcmcuIl0sInR0bCI6MTIwMCwidHlwZSI6IkNOQU1FIn0K"
+        ]
+      },
+      "Response": {
+        "StatusCode": 200,
+        "Proto": "HTTP/1.1",
+        "ProtoMajor": 1,
+        "ProtoMinor": 1,
+        "Header": {
+          "Alt-Svc": [
+            "h3-29=\":443\"; ma=2592000,h3-T051=\":443\"; ma=2592000,h3-Q050=\":443\"; ma=2592000,h3-Q046=\":443\"; ma=2592000,h3-Q043=\":443\"; ma=2592000,quic=\":443\"; ma=2592000; v=\"46,43\""
+          ],
+          "Cache-Control": [
+            "private"
+          ],
+          "Content-Encoding": [
+            "gzip"
+          ],
+          "Content-Type": [
+            "application/json; charset=UTF-8"
+          ],
+          "Date": [
+            "Wed, 26 May 2021 21:06:09 GMT"
+          ],
+          "Server": [
+            "ESF"
+          ],
+          "Vary": [
+            "Origin",
+            "X-Origin",
+            "Referer"
+          ],
+          "X-Content-Type-Options": [
+            "nosniff"
+          ],
+          "X-Frame-Options": [
+            "SAMEORIGIN"
+          ],
+          "X-Xss-Protection": [
+            "0"
+          ]
+        },
+        "Body": "H4sIAAAAAAAC/z2Muw7CMBAE/+VorVOgTIcQJRShjChMvIos/NL5gkCIf8cpoNzVzLwp2QjqKfibS5UVVdnhgZBLRFL2mcmQvsoKHc7703GdGqjf7rrOkIizaiv14y+Bp40lgLPMTFdD1c/J6iIY/mh77z65VmzCRlDzIhMGTFncBUqfL97pqn6XAAAA"
+      }
+    }
+  ]
+}
