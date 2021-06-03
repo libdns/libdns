@@ -1,13 +1,13 @@
 Google Cloud DNS for `libdns`
 =======================
 
-[![godoc reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/libdns/googledns)
+[![godoc reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/libdns/googleclouddns)
 
 This package implements the [libdns interfaces](https://github.com/libdns/libdns) for [Google Cloud](https://cloud.google.com/).
 
 ## Authenticating
 
-The googledns package will authenticate using the supported authentication methods found in the [google-cloud-go library](https://github.com/googleapis/google-cloud-go#authorization):
+The googleclouddns package will authenticate using the supported authentication methods found in the [google-cloud-go library](https://github.com/googleapis/google-cloud-go#authorization):
 
 * the environment variable `GOOGLE_APPLICATION_CREDENTIALS` pointing to a service account file
 * `ServiceAccountJSON` (`json:"gcp_application_default"`)
@@ -22,7 +22,7 @@ The package also requires the project where the Google Cloud DNS zone exists
 Google Cloud DNS for [`libdns`](https://github.com/libdns/libdns)
 =======================
 
-[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/googledns)
+[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/googleclouddns)
 
 This package implements the [libdns interfaces](https://github.com/libdns/libdns) for Google Cloud DNS, allowing you to manage DNS records.
 
@@ -38,7 +38,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/libdns/googledns"
+	"github.com/libdns/googleclouddns"
 )
 
 // main shows how libdns works with Google Cloud DNS.
@@ -48,7 +48,7 @@ import (
 // Google Cloud Go API sources.
 func main() {
 	// Create new provider instance
-	googleProvider := googledns.Provider{
+	googleProvider := googleclouddns.Provider{
 		Project: os.Getenv("GCP_PROJECT"),
 	}
 	zone := `example.localhost`

@@ -1,6 +1,6 @@
-// Package googledns implements a DNS record management client compatible
+// Package googleclouddns implements a DNS record management client compatible
 // with the libdns interfaces for Google Cloud DNS.
-package googledns
+package googleclouddns
 
 import (
 	"context"

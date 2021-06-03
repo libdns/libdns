@@ -1,4 +1,4 @@
-package googledns
+package googleclouddns
 
 import (
 	"context"
