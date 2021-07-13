@@ -2,6 +2,7 @@ package pdnsprovider
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"reflect"
@@ -125,7 +126,7 @@ func TestPDNSClient(t *testing.T) {
 			operation: "records",
 			zone:      "example.org.",
 			records:   nil,
-			want:      []string{"1.example.org.", "2.example.org."},
+			want:      []string{"1:127.0.0.1", "1:127.0.0.2", "1:127.0.0.3", "2:127.0.0.4", "2:127.0.0.5", "2:127.0.0.6"},
 		},
 		{
 			name:      "Test Append Zone A record",
@@ -172,17 +173,17 @@ func TestPDNSClient(t *testing.T) {
 			var have []string
 			switch table.operation {
 			case "records":
-				z, err := c.fullZone(context.Background(), table.zone)
+				recs, err := p.GetRecords(context.Background(), table.zone)
 				if err != nil {
 					t.Errorf("error fetching full zone %s", err)
 					return
 				}
 
-				for _, rr := range z.ResourceRecordSets {
+				for _, rr := range recs {
 					if rr.Type != "A" {
 						continue
 					}
-					have = append(have, rr.Name)
+					have = append(have, fmt.Sprintf("%s:%s", rr.Name, rr.Value))
 				}
 			case "append":
 				_, err := p.AppendRecords(context.Background(), table.zone, table.records)
