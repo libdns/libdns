@@ -118,6 +118,7 @@ func TestPDNSClient(t *testing.T) {
 		name      string
 		operation string
 		zone      string
+		Type      string
 		records   []libdns.Record
 		want      []string
 	}{
@@ -126,25 +127,29 @@ func TestPDNSClient(t *testing.T) {
 			operation: "records",
 			zone:      "example.org.",
 			records:   nil,
+			Type:      "A",
 			want:      []string{"1:127.0.0.1", "1:127.0.0.2", "1:127.0.0.3", "2:127.0.0.4", "2:127.0.0.5", "2:127.0.0.6"},
 		},
 		{
 			name:      "Test Append Zone A record",
 			operation: "append",
 			zone:      "example.org.",
+			Type:      "A",
 			records: []libdns.Record{
 				{
-					Name:  "1",
+					Name:  "2",
 					Type:  "A",
 					Value: "127.0.0.7",
 				},
 			},
-			want: []string{"127.0.0.1", "127.0.0.2", "127.0.0.3", "127.0.0.7"},
+			want: []string{"1:127.0.0.1", "1:127.0.0.2", "1:127.0.0.3",
+				"2:127.0.0.4", "2:127.0.0.5", "2:127.0.0.6", "2:127.0.0.7"},
 		},
 		{
 			name:      "Test Append Zone TXT record",
 			operation: "append",
 			zone:      "example.org.",
+			Type:      "TXT",
 			records: []libdns.Record{
 				{
 					Name:  "1",
@@ -152,24 +157,67 @@ func TestPDNSClient(t *testing.T) {
 					Value: "\"This is also some text\"",
 				},
 			},
-			want: []string{"\"This is text\"", "\"This is also some text\""},
+			want: []string{"1:\"This is text\"", "1:\"This is also some text\""},
 		},
-
 		{
 			name:      "Test Delete Zone",
 			operation: "delete",
 			zone:      "example.org.",
+			Type:      "A",
 			records: []libdns.Record{
 				{
-					Name:  "1",
+					Name:  "2",
 					Type:  "A",
 					Value: "127.0.0.7",
 				},
 			},
-			want: []string{"127.0.0.1", "127.0.0.2", "127.0.0.3", "127.0.0.4", "127.0.0.5", "127.0.0.6"},
+			want: []string{"1:127.0.0.1", "1:127.0.0.2", "1:127.0.0.3", "2:127.0.0.4", "2:127.0.0.5", "2:127.0.0.6"},
+		},
+		{
+			name:      "Test Append and Add Zone",
+			operation: "append",
+			zone:      "example.org.",
+			Type:      "A",
+			records: []libdns.Record{
+				{
+					Name:  "2",
+					Type:  "A",
+					Value: "127.0.0.8",
+				},
+				{
+					Name:  "3",
+					Type:  "A",
+					Value: "127.0.0.9",
+				},
+			},
+			want: []string{"1:127.0.0.1", "1:127.0.0.2", "1:127.0.0.3",
+				"2:127.0.0.4", "2:127.0.0.5", "2:127.0.0.6", "2:127.0.0.8",
+				"3:127.0.0.9"},
+		},
+		{
+			name:      "Test Set",
+			operation: "set",
+			zone:      "example.org.",
+			Type:    "A",
+			records: []libdns.Record{
+				{
+					Name:  "2",
+					Type:  "A",
+					Value: "127.0.0.1",
+				},
+				{
+					Name:  "1",
+					Type:  "A",
+					Value: "127.0.0.1",
+				},
+			},
+			want: []string{"1:127.0.0.1", "2:127.0.0.1", "3:127.0.0.9"},
 		},
 	} {
 		t.Run(table.name, func(t *testing.T) {
+			f := func(Name, Val string) string {
+				return fmt.Sprintf("%s:%s", libdns.RelativeName(Name, table.zone), Val)
+			}
 			var have []string
 			switch table.operation {
 			case "records":
@@ -180,15 +228,21 @@ func TestPDNSClient(t *testing.T) {
 				}
 
 				for _, rr := range recs {
-					if rr.Type != "A" {
+					if rr.Type != table.Type {
 						continue
 					}
 					have = append(have, fmt.Sprintf("%s:%s", rr.Name, rr.Value))
 				}
-			case "append":
-				_, err := p.AppendRecords(context.Background(), table.zone, table.records)
+			case "append", "set":
+				var err error
+				switch table.operation {
+				case "append":
+					_, err = p.AppendRecords(context.Background(), table.zone, table.records)
+				default:
+					_, err = p.SetRecords(context.Background(), table.zone, table.records)
+				}
 				if err != nil {
-					t.Errorf("failed to append records: %s", err)
+					t.Errorf("failed to %s records: %s", table.operation, err)
 					return
 				}
 				z, err := c.fullZone(context.Background(), table.zone)
@@ -196,23 +250,11 @@ func TestPDNSClient(t *testing.T) {
 					t.Errorf("error fetching full zone %s", err)
 					return
 				}
-				hash := makeLDRecHash(convertNamesToAbsolute(table.zone, table.records))
-				wantedRRs := convertLDHash(hash)
-
-				for _, wantedRR := range wantedRRs {
-					found := false
-					for _, gotRR := range z.ResourceRecordSets {
-						if wantedRR.Name == gotRR.Name && wantedRR.Type == gotRR.Type {
-							found = true
-							for _, val := range gotRR.Records {
-								have = append(have, val.Content)
-							}
-							break
+				for _, rr := range z.ResourceRecordSets {
+					if rr.Type == table.Type {
+						for _, rec := range rr.Records {
+							have = append(have, f(rr.Name, rec.Content))
 						}
-					}
-					if !found {
-						t.Errorf("rr not found: %s", wantedRR.Name)
-						return
 					}
 				}
 			case "delete":
@@ -227,11 +269,11 @@ func TestPDNSClient(t *testing.T) {
 					return
 				}
 				for _, rr := range z.ResourceRecordSets {
-					if rr.Type != "A" {
+					if rr.Type != table.Type {
 						continue
 					}
 					for _, rec := range rr.Records {
-						have = append(have, rec.Content)
+						have = append(have, f(rr.Name, rec.Content))
 					}
 				}
 
