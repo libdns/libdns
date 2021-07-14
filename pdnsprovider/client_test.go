@@ -215,28 +215,23 @@ func TestPDNSClient(t *testing.T) {
 		},
 	} {
 		t.Run(table.name, func(t *testing.T) {
+			var err error
 			switch table.operation {
 			case "records":
 				// fetch below
-			case "append", "set":
-				var err error
-				switch table.operation {
-				case "append":
-					_, err = p.AppendRecords(context.Background(), table.zone, table.records)
-				default:
-					_, err = p.SetRecords(context.Background(), table.zone, table.records)
-				}
-				if err != nil {
-					t.Errorf("failed to %s records: %s", table.operation, err)
-					return
-				}
+			case "append":
+				_, err = p.AppendRecords(context.Background(), table.zone, table.records)
+			case "set":
+				_, err = p.SetRecords(context.Background(), table.zone, table.records)
 			case "delete":
-				_, err := p.DeleteRecords(context.Background(), table.zone, table.records)
-				if err != nil {
-					t.Errorf("error deleting records: %s", err)
-					return
-				}
+				_, err = p.DeleteRecords(context.Background(), table.zone, table.records)
 			}
+
+			if err != nil {
+				t.Errorf("failed to %s records: %s", table.operation, err)
+				return
+			}
+
 			// Fetch the zone
 			recs, err := p.GetRecords(context.Background(), table.zone)
 			if err != nil {
