@@ -215,31 +215,9 @@ func TestPDNSClient(t *testing.T) {
 		},
 	} {
 		t.Run(table.name, func(t *testing.T) {
-			zoneFetcher := func() ([]string, error) {
-				recs, err := p.GetRecords(context.Background(), table.zone)
-				if err != nil {
-					t.Errorf("error fetching full zone %s", err)
-					return nil, err
-				}
-				var retVal []string
-				for _, rr := range recs {
-					if rr.Type != table.Type {
-						continue
-					}
-					retVal = append(retVal, fmt.Sprintf("%s:%s", rr.Name, rr.Value))
-				}
-				return retVal, nil
-			}
-			var have []string
-
 			switch table.operation {
 			case "records":
-				var err error
-				have, err = zoneFetcher()
-				if err != nil {
-					t.Errorf("%s", err)
-					return
-				}
+				// fetch below
 			case "append", "set":
 				var err error
 				switch table.operation {
@@ -252,26 +230,27 @@ func TestPDNSClient(t *testing.T) {
 					t.Errorf("failed to %s records: %s", table.operation, err)
 					return
 				}
-
-				have, err = zoneFetcher()
-				if err != nil {
-					t.Errorf("failed to fetch zone: %s", err)
-					return
-				}
-
 			case "delete":
 				_, err := p.DeleteRecords(context.Background(), table.zone, table.records)
 				if err != nil {
 					t.Errorf("error deleting records: %s", err)
 					return
 				}
-				have, err = zoneFetcher()
-				if err != nil {
-					t.Errorf("failed to fetch zone: %s", err)
-					return
-				}
-
 			}
+			// Fetch the zone
+			recs, err := p.GetRecords(context.Background(), table.zone)
+			if err != nil {
+				t.Errorf("error fetching zone")
+				return
+			}
+			var have []string
+			for _, rr := range recs {
+				if rr.Type != table.Type {
+					continue
+				}
+				have = append(have, fmt.Sprintf("%s:%s", rr.Name, rr.Value))
+			}
+
 			sort.Strings(have)
 			sort.Strings(table.want)
 			if !reflect.DeepEqual(have, table.want) {
