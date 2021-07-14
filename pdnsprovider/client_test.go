@@ -198,7 +198,7 @@ func TestPDNSClient(t *testing.T) {
 			name:      "Test Set",
 			operation: "set",
 			zone:      "example.org.",
-			Type:    "A",
+			Type:      "A",
 			records: []libdns.Record{
 				{
 					Name:  "2",
@@ -215,23 +215,30 @@ func TestPDNSClient(t *testing.T) {
 		},
 	} {
 		t.Run(table.name, func(t *testing.T) {
-			f := func(Name, Val string) string {
-				return fmt.Sprintf("%s:%s", libdns.RelativeName(Name, table.zone), Val)
-			}
-			var have []string
-			switch table.operation {
-			case "records":
+			zoneFetcher := func() ([]string, error) {
 				recs, err := p.GetRecords(context.Background(), table.zone)
 				if err != nil {
 					t.Errorf("error fetching full zone %s", err)
-					return
+					return nil, err
 				}
-
+				var retVal []string
 				for _, rr := range recs {
 					if rr.Type != table.Type {
 						continue
 					}
-					have = append(have, fmt.Sprintf("%s:%s", rr.Name, rr.Value))
+					retVal = append(retVal, fmt.Sprintf("%s:%s", rr.Name, rr.Value))
+				}
+				return retVal, nil
+			}
+			var have []string
+
+			switch table.operation {
+			case "records":
+				var err error
+				have, err = zoneFetcher()
+				if err != nil {
+					t.Errorf("%s", err)
+					return
 				}
 			case "append", "set":
 				var err error
@@ -245,36 +252,23 @@ func TestPDNSClient(t *testing.T) {
 					t.Errorf("failed to %s records: %s", table.operation, err)
 					return
 				}
-				z, err := c.fullZone(context.Background(), table.zone)
+
+				have, err = zoneFetcher()
 				if err != nil {
-					t.Errorf("error fetching full zone %s", err)
+					t.Errorf("failed to fetch zone: %s", err)
 					return
 				}
-				for _, rr := range z.ResourceRecordSets {
-					if rr.Type == table.Type {
-						for _, rec := range rr.Records {
-							have = append(have, f(rr.Name, rec.Content))
-						}
-					}
-				}
+
 			case "delete":
 				_, err := p.DeleteRecords(context.Background(), table.zone, table.records)
 				if err != nil {
 					t.Errorf("error deleting records: %s", err)
 					return
 				}
-				z, err := c.fullZone(context.Background(), table.zone)
+				have, err = zoneFetcher()
 				if err != nil {
-					t.Errorf("error fetching full zone %s", err)
+					t.Errorf("failed to fetch zone: %s", err)
 					return
-				}
-				for _, rr := range z.ResourceRecordSets {
-					if rr.Type != table.Type {
-						continue
-					}
-					for _, rec := range rr.Records {
-						have = append(have, f(rr.Name, rec.Content))
-					}
 				}
 
 			}
