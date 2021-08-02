@@ -1,87 +1,85 @@
-libdns - Universal DNS provider APIs for Go
-===========================================
+# IONOS DNS API for `libdns`
 
-<a href="https://pkg.go.dev/github.com/libdns/libdns"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"></a>
+This package implements the libdns interfaces for the [IONOS DNS
+API (beta)](https://developer.hosting.ionos.de/docs/dns)
 
-**⚠️ Work-in-progress. Exported APIs are subject to change.**
+## Authenticating
 
-`libdns` is a collection of free-range DNS provider client implementations written in Go! With libdns packages, your Go program can manage DNS records across any supported providers. A "provider" is a service or program that manages a DNS zone.
-
-This repository defines the core interfaces that provider packages should implement. They are small and idiomatic Go interfaces with well-defined semantics.
-
-The interfaces include:
-
-- [`RecordGetter`](https://pkg.go.dev/github.com/libdns/libdns#RecordGetter) to list records.
-- [`RecordAppender`](https://pkg.go.dev/github.com/libdns/libdns#RecordAppender) to append new records.
-- [`RecordSetter`](https://pkg.go.dev/github.com/libdns/libdns#RecordSetter) to set (create or change existing) records.
-- [`RecordDeleter`](https://pkg.go.dev/github.com/libdns/libdns#RecordDeleter) to delete records.
-
-[See full godoc for detailed documentation.](https://pkg.go.dev/github.com/libdns/libdns)
-
+To authenticate you need to supply a IONOS API Key, as described on
+https://developer.hosting.ionos.de/docs/getstarted
 
 ## Example
 
-To work with DNS records managed by Cloudflare, for example, we can use [libdns/cloudflare](https://pkg.go.dev/github.com/libdns/cloudflare):
+Here's a minimal example of how to get all DNS records for zone.
 
 ```go
+package main
+
 import (
-	"github.com/libdns/cloudflare"
-	"github.com/libdns/libdns"
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/libdns/libdns/ionos"
 )
 
-ctx := context.TODO()
+func main() {
+	token := os.Getenv("LIBDNS_IONOS_TOKEN")
+	if token == "" {
+		panic("LIBDNS_IONOS_TOKEN not set")
+	}
 
-zone := "example.com."
+	zone := os.Getenv("LIBDNS_IONOS_ZONE")
+	if zone == "" {
+		panic("LIBDNS_IONOS_ZONE not set")
+	}
 
-// configure the DNS provider (choose any from github.com/libdns)
-provider := cloudflare.Provider{APIToken: "topsecret"}
+	p := &ionos.Provider{
+		AuthAPIToken: token,
+	}
 
-// list records
-recs, err := provider.GetRecords(ctx, zone)
+	ctx, _ := context.WithTimeout(context.Background(), time.Duration(15*time.Second))
+	records, err := p.GetRecords(ctx, zone)
+	if err != nil {
+		panic(err)
+	}
 
-// create records (AppendRecords is similar)
-newRecs, err := provider.SetRecords(ctx, zone, []libdns.Record{
-	Type:  "A",
-	Name:  "sub",
-	Value: "1.2.3.4",
-})
-
-// delete records (this example uses provider-assigned ID)
-deletedRecs, err := provider.DeleteRecords(ctx, zone, []libdns.Record{
-	ID: "foobar",
-})
-
-// no matter which provider you use, the code stays the same!
-// (some providers have caveats; see their package documentation)
+	out, _ := json.MarshalIndent(records, "", "  ")
+	fmt.Println(string(out))
+}
 ```
 
+## Test
 
-## Implementing new providers
+The file `provisioner_test.go` contains an end-to-end test suite, using the
+original IONOS API service (i.e. no test doubles - be careful). To run the
+tests:
 
-Providers are 100% written and maintained by the community! We all maintain just the packages for providers we use.
+```console
+$ export LIBDNS_IONOS_TEST_ZONE=mydomain.org
+$ export LIBDNS_IONOS_TEST_TOKEN=aaaaaaaaaaa.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+$ go  test -v
+=== RUN   Test_AppendRecords
+--- PASS: Test_AppendRecords (43.01s)
+=== RUN   Test_DeleteRecords
+--- PASS: Test_DeleteRecords (23.91s)
+=== RUN   Test_GetRecords
+--- PASS: Test_GetRecords (30.96s)
+=== RUN   Test_SetRecords
+--- PASS: Test_SetRecords (51.39s)
+PASS
+ok  	github.com/libdns/ionos	149.277s
+```
 
-**[Instructions for adding new providers](https://github.com/libdns/libdns/wiki/Implementing-providers)** are on this repo's wiki. Please feel free to contribute.
+The tests were taken from the [Hetzner libdns
+module](https://github.com/libdns/hetzner) and are not modified.
 
+## Author
 
-## Similar projects
+original Work (C) Copyright 2020 by matthiasng (based on https://github.com/libdns/hetzner),
+this version (C) Copyright 2021 by Jan Delgado.
 
-**[OctoDNS](https://github.com/github/octodns)** is a suite of tools written in Python for managing DNS. However, its approach is a bit heavy-handed when all you need are small, incremental changes to a zone:
+License: MIT
 
-> WARNING: OctoDNS assumes ownership of any domain you point it to. When you tell it to act it will do whatever is necessary to try and match up states including deleting any unexpected records. Be careful when playing around with OctoDNS. 
-
-This is incredibly useful when you are maintaining your own zone file, but risky when you just need incremental changes.
-
-**[StackExchange/dnscontrol](https://github.com/StackExchange/dnscontrol)** is written in Go, but is similar to OctoDNS in that it tends to obliterate your entire zone and replace it with your input. Again, this is very useful if you are maintaining your own master list of records, but doesn't do well for simply adding or removing records.
-
-**[go-acme/lego](https://github.com/go-acme/lego)** has support for a huge number of DNS providers (75+!), but their APIs are only capable of setting and deleting TXT records for ACME challenges.
-
-**`libdns`** takes inspiration from the above projects but aims for a more generally-useful set of APIs that homogenize pretty well across providers. In contrast to the above projects, libdns can add, set, delete, and get arbitrary records from a zone without obliterating it (although syncing up an entire zone is also possible!). Its APIs also include context so long-running calls can be cancelled early, for example to accommodate on-line config changes downstream. libdns interfaces are also smaller and more composable. Additionally, libdns can grow to support a nearly infinite number of DNS providers without added bloat, because each provider implementation is a separate Go module, which keeps your builds lean and fast.
-
-In summary, the goal is that libdns providers can do what the above libraries/tools can do, but with more flexibility: they can create and delete TXT records for ACME challenges, they can replace entire zones, but they can also do incremental changes or simply read records.
-
-
-## Record abstraction
-
-How records are represented across providers varies widely, and each kind of record has different fields and semantics. In time, our goal is for the `libdns.Record` type to be able to represent most of them as concisely and simply as possible, with the interface methods able to deliver on most of the possible zone operations.
-
-Realistically, libdns should enable most common record manipulations, but may not be able to fit absolutely 100% of all possibilities with DNS in a provider-agnostic way. That is probably OK; and given the wide varieties in DNS record types and provider APIs, it would be unreasonable to expect otherwise. We are not aiming for 100% fulfillment of 100% of users' requirements; more like 100% fulfillment of ~90% of users' requirements.
