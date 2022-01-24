@@ -1,3 +1,3 @@
-module github.com/libdns/libdns
+module libdns-godaddy
 
-go 1.14
+go 1.18
