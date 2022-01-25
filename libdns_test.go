@@ -1,4 +1,4 @@
-package libdns
+package godaddy
 
 import (
 	"fmt"

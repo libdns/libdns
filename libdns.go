@@ -28,7 +28,7 @@
 // global; for example: the scope of synchronization might only need to be
 // within the same zone, allowing multiple requests at once as long as all
 // of them are for different zones. (Exact logic depends on the provider.)
-package libdns
+package godaddy
 
 import (
 	"context"
