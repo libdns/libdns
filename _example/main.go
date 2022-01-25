@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
 	"log"
 	"os"
 
@@ -11,9 +12,14 @@ import (
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	token := os.Getenv("GODADDY_TOKEN")
 	if token == "" {
-		fmt.Printf("DNSPOD_TOKEN not set\n")
+		fmt.Printf("GODADDY_TOKEN not set\n")
 		return
 	}
 	zone := os.Getenv("ZONE")

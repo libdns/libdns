@@ -23,9 +23,9 @@ import (
 )
 
 func main() {
-	token := os.Getenv("DNSPOD_TOKEN")
+	token := os.Getenv("GODADDY_TOKEN")
 	if token == "" {
-		fmt.Printf("DNSPOD_TOKEN not set\n")
+		fmt.Printf("GODADDY_TOKEN not set\n")
 		return
 	}
 	zone := os.Getenv("ZONE")

@@ -1,2 +1,3 @@
 _gitignore/
 /libdns.iml
+/.env
