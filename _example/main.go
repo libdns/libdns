@@ -1,14 +1,3 @@
-# Godaddy for `libdns`
-
-[![godoc reference](https://img.shields.io/badge/godoc-reference-blue.svg)](https://pkg.go.dev/github.com/artknight/libdns-godaddy)
-
-This package implements the libdns interfaces for the [Godaddy API](https://developer.godaddy.com/doc/endpoint/domains)
-
-## Example
-
-Here's a minimal example of how to get all your DNS records using this `libdns` provider (see `_example/main.go`)
-
-```go
 package main
 
 import (
@@ -16,14 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
-	godaddy "github.com/artknight/libdns-godday"
+	godaddy "github.com/artknight/libdns-godaddy"
 	"github.com/libdns/libdns"
 )
 
 func main() {
-	token := os.Getenv("DNSPOD_TOKEN")
+	token := os.Getenv("GODADDY_TOKEN")
 	if token == "" {
 		fmt.Printf("DNSPOD_TOKEN not set\n")
 		return
@@ -42,7 +30,7 @@ func main() {
 		log.Fatalln("ERROR: %s\n", err.Error())
 	}
 
-	testName := "libdns-test"
+	testName := "_acme-challenge.home"
 	hasTestName := false
 
 	for _, record := range records {
@@ -55,9 +43,10 @@ func main() {
 	if !hasTestName {
 		appendedRecords, err := provider.AppendRecords(context.TODO(), zone, []libdns.Record{
 			libdns.Record{
-				Type: "TXT",
-				Name: testName,
-				TTL:  time.Duration(600) * time.Second,
+				Type:  "TXT",
+				Name:  testName + "." + zone,
+				TTL:   0,
+				Value: "20HnRk5p6rZd7TXhiMoVEYSjt5OpetC6mdovlTfJ4As",
 			},
 		})
 
@@ -83,4 +72,3 @@ func main() {
 		fmt.Println(deleteRecords)
 	}
 }
-```
