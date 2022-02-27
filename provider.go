@@ -36,6 +36,11 @@ func (p *Provider) getCredentials() ApiCredentials {
 	return ApiCredentials{p.APIKey, p.APISecretKey}
 }
 
+// Strips the trailing dot from a Zone
+func trimZone(zone string) string {
+	return strings.TrimSuffix(zone, ".")
+}
+
 func (p *Provider) CheckCredentials(ctx context.Context) (string, error) {
 	client := http.Client{}
 
@@ -86,6 +91,7 @@ func (p *Provider) CheckCredentials(ctx context.Context) (string, error) {
 // GetRecords lists all the records in the zone.
 func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
 	client := http.Client{}
+	trimmedZone := trimZone(zone)
 
 	credentialJson, err := json.Marshal(p.getCredentials())
 	if err != nil {
@@ -93,7 +99,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", p.getApiHost()+"/dns/retrieve/"+zone, bytes.NewReader(credentialJson))
+	req, err := http.NewRequest("POST", p.getApiHost()+"/dns/retrieve/"+trimmedZone, bytes.NewReader(credentialJson))
 	if err != nil {
 		log.Fatal(err)
 		return nil, err
@@ -108,7 +114,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
 		return nil, fmt.Errorf("could not get records: Zone: %s; Status: %v; Body: %s",
-			zone, resp.StatusCode, string(bodyBytes))
+			trimmedZone, resp.StatusCode, string(bodyBytes))
 	}
 
 	result, err := ioutil.ReadAll(resp.Body)
@@ -152,6 +158,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 	client := http.Client{}
 
 	credentials := p.getCredentials()
+	trimmedZone := trimZone(zone)
 
 	var createdRecords []libdns.Record
 
@@ -160,14 +167,14 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 			record.TTL = 600 * time.Second
 		}
 		ttlInSeconds := int(record.TTL / time.Second)
-		trimmedName := strings.TrimSuffix(record.Name, "."+zone)
+		trimmedName := libdns.RelativeName(record.Name, zone)
 		reqBody := RecordCreateRequest{&credentials, record.Value, trimmedName, strconv.Itoa(ttlInSeconds), record.Type}
 		reqJson, err := json.Marshal(reqBody)
 		if err != nil {
 			log.Fatal(err)
 			return nil, err
 		}
-		req, err := http.NewRequest("POST", fmt.Sprintf("%s/dns/create/%s", p.getApiHost(), zone), bytes.NewReader(reqJson))
+		req, err := http.NewRequest("POST", fmt.Sprintf("%s/dns/create/%s", p.getApiHost(), trimmedZone), bytes.NewReader(reqJson))
 		if err != nil {
 			log.Fatal(err)
 			return nil, err
@@ -182,7 +189,7 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 		if resp.StatusCode != http.StatusOK {
 			bodyBytes, _ := ioutil.ReadAll(resp.Body)
 			return nil, fmt.Errorf("could not create record:(%s) in Zone: %s; Status: %v; Body: %s",
-				fmt.Sprint(record), zone, resp.StatusCode, string(bodyBytes))
+				fmt.Sprint(reqBody), trimmedZone, resp.StatusCode, string(bodyBytes))
 		}
 
 		result, err := ioutil.ReadAll(resp.Body)
@@ -214,6 +221,7 @@ func (p *Provider) UpdateRecords(ctx context.Context, zone string, records []lib
 	client := http.Client{}
 
 	credentials := p.getCredentials()
+	trimmedZone := trimZone(zone)
 
 	var createdRecords []libdns.Record
 
@@ -222,14 +230,14 @@ func (p *Provider) UpdateRecords(ctx context.Context, zone string, records []lib
 			record.TTL = 600 * time.Second
 		}
 		ttlInSeconds := int(record.TTL / time.Second)
-		trimmedName := strings.TrimSuffix(record.Name, "."+zone)
+		trimmedName := libdns.RelativeName(record.Name, zone)
 		reqBody := RecordUpdateRequest{&credentials, record.Value, strconv.Itoa(ttlInSeconds)}
 		reqJson, err := json.Marshal(reqBody)
 		if err != nil {
 			log.Fatal(err)
 			return nil, err
 		}
-		req, err := http.NewRequest("POST", fmt.Sprintf("%s/dns/editByNameType/%s/%s/%s", p.getApiHost(), zone, record.Type, trimmedName), bytes.NewReader(reqJson))
+		req, err := http.NewRequest("POST", fmt.Sprintf("%s/dns/editByNameType/%s/%s/%s", p.getApiHost(), trimmedZone, record.Type, trimmedName), bytes.NewReader(reqJson))
 		if err != nil {
 			log.Fatal(err)
 			return nil, err
@@ -243,8 +251,8 @@ func (p *Provider) UpdateRecords(ctx context.Context, zone string, records []lib
 
 		if resp.StatusCode != http.StatusOK {
 			bodyBytes, _ := ioutil.ReadAll(resp.Body)
-			return nil, fmt.Errorf("could not create record:(%s) in Zone: %s; Status: %v; Body: %s",
-				fmt.Sprint(record), zone, resp.StatusCode, string(bodyBytes))
+			return nil, fmt.Errorf("could not update record:(%s) in Zone: %s; Status: %v; Body: %s",
+				fmt.Sprint(reqBody), trimmedZone, resp.StatusCode, string(bodyBytes))
 		}
 
 		result, err := ioutil.ReadAll(resp.Body)
@@ -305,6 +313,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 	client := http.Client{}
 
 	credentials := p.getCredentials()
+	trimmedZone := trimZone(zone)
 
 	var deletedRecords []libdns.Record
 
@@ -314,9 +323,9 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 			log.Fatal(err)
 			return nil, err
 		}
-		trimmedName := strings.TrimSuffix(record.Name, "."+zone)
+		trimmedName := libdns.RelativeName(record.Name, zone)
 
-		req, err := http.NewRequest("POST", fmt.Sprintf("%s/dns/deleteByNameType/%s/%s/%s", p.getApiHost(), zone, record.Type, trimmedName), bytes.NewReader(reqJson))
+		req, err := http.NewRequest("POST", fmt.Sprintf("%s/dns/deleteByNameType/%s/%s/%s", p.getApiHost(), trimmedZone, record.Type, trimmedName), bytes.NewReader(reqJson))
 		if err != nil {
 			log.Fatal(err)
 			return nil, err
@@ -330,8 +339,8 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 
 		if resp.StatusCode != http.StatusOK {
 			bodyBytes, _ := ioutil.ReadAll(resp.Body)
-			return nil, fmt.Errorf("could not create record:(Type: %s Name: %s) in Zone: %s; Status: %v; Body: %s",
-				record.Type, record.Name, zone, resp.StatusCode, string(bodyBytes))
+			return nil, fmt.Errorf("could not delete record:(Type: %s Name: %s) in Zone: %s; Status: %v; Body: %s",
+				record.Type, record.Name, trimmedZone, resp.StatusCode, string(bodyBytes))
 		}
 
 		result, err := ioutil.ReadAll(resp.Body)
