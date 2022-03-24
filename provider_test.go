@@ -3,7 +3,9 @@ package joohoi_acme_dns
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"testing"
@@ -11,11 +13,7 @@ import (
 	"github.com/libdns/libdns"
 )
 
-var (
-	clientURL   = "https://auth.acme-dns.io"
-	recordValue = "___validation_token_received_from_the_ca___"
-	record      = libdns.Record{Type: "TXT", Value: recordValue}
-)
+var serverURL = "https://auth.acme-dns.io"
 
 type account struct {
 	Username   string `json:"username,omitempty"`
@@ -24,8 +22,8 @@ type account struct {
 	FullDomain string `json:"fulldomain,omitempty"`
 }
 
-func registerAccount(t *testing.T) account {
-	resp, err := http.PostForm(clientURL+"/register", nil)
+func createDomainConfig(t *testing.T) DomainConfig {
+	resp, err := http.PostForm(serverURL+"/register", nil)
 	if err != nil {
 		t.Fatal("Failed to register an account")
 	}
@@ -42,24 +40,105 @@ func registerAccount(t *testing.T) account {
 		t.Fatal("Account struct has empty fields")
 	}
 	t.Logf("Account domain is %s", acc.FullDomain)
-	return acc
+	return DomainConfig{
+		Username:   acc.Username,
+		Password:   acc.Password,
+		Subdomain:  acc.Subdomain,
+		FullDomain: acc.FullDomain,
+		ServerURL:  serverURL,
+	}
+}
+
+func makeRecord(recordValue string) libdns.Record {
+	return libdns.Record{
+		Type:  "TXT",
+		Name:  "_acme-challenge",
+		Value: recordValue,
+	}
 }
 
 func TestAppendRecords(t *testing.T) {
-	acc := registerAccount(t)
-	p := Provider{Username: acc.Username, Password: acc.Password, Subdomain: acc.Subdomain, ClientURL: clientURL}
-	_, err := p.AppendRecords(context.TODO(), "any-zone", []libdns.Record{record})
-	if err != nil {
-		t.Fatal("Failed to append records: %w", err)
+	domain1, domain2 := "example.com", "sub.example.com"
+	config1, config2 := createDomainConfig(t), createDomainConfig(t)
+	value1, value2, value3 :=
+		"__validation_token_received_from_the_ca_1__",
+		"__validation_token_received_from_the_ca_2__",
+		"__validation_token_received_from_the_ca_3__"
+	p := Provider{
+		Configs: map[string]DomainConfig{
+			domain1: config1,
+			domain2: config2,
+		},
 	}
-	newRecords, err := net.LookupTXT(acc.FullDomain)
+
+	_, err := p.AppendRecords(
+		context.TODO(),
+		domain1,
+		[]libdns.Record{makeRecord(value1)},
+	)
+	if err != nil {
+		t.Fatal("Failed to append records: ", err)
+	}
+
+	_, err = p.AppendRecords(
+		context.TODO(),
+		domain2,
+		[]libdns.Record{makeRecord(value2), makeRecord(value3)},
+	)
+	if err != nil {
+		t.Fatal("Failed to append records: ", err)
+	}
+
+	newRecords, err := net.LookupTXT(p.Configs[domain1].FullDomain)
 	if err != nil {
 		t.Fatal("TXT record lookup failed")
 	}
 	if len(newRecords) != 1 {
 		t.Fatal("Only 1 TXT record expected")
 	}
-	if newRecords[0] != recordValue {
+	if newRecords[0] != value1 {
 		t.Fatalf("Unexpected TXT record value %s", newRecords[0])
 	}
+
+	newRecords, err = net.LookupTXT(p.Configs[domain2].FullDomain)
+	if err != nil {
+		t.Fatal("TXT record lookup failed")
+	}
+	if len(newRecords) != 2 {
+		t.Fatal("2 TXT records expected")
+	}
+	if value2 != newRecords[0] && value2 != newRecords[1] {
+		t.Fatalf("Expected record %s, not found in %v", value2, newRecords)
+	}
+	if value3 != newRecords[0] && value3 != newRecords[1] {
+		t.Fatalf("Expected record %s, not found in %v", value2, newRecords)
+	}
+}
+
+func TestProviderCreation(t *testing.T) {
+	content, err := ioutil.ReadFile("configs.json")
+	if err != nil {
+		log.Fatalf("Failed to read file: %s", err)
+	}
+	var configs map[Domain]DomainConfig
+	err = json.Unmarshal(content, &configs)
+	if err != nil {
+		log.Fatalf("Failed to unmarshall json: %s", err)
+	}
+	p := Provider{Configs: configs}
+	records, err := p.AppendRecords(
+		context.TODO(),
+		"your.test.domain.example.com",
+		[]libdns.Record{
+			{
+				Type:  "TXT",
+				Name:  "_acme-challenge",
+				Value: "___validation_token_received_from_the_ca___",
+			},
+		},
+	)
+	if err != nil {
+		log.Fatalf("Failed to append records: %s", err)
+	}
+	fmt.Printf("Created records: %v\n", records)
 }
