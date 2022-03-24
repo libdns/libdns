@@ -1,7 +1,7 @@
-Joohoi's ACME-DNS for [`libdns`](https://github.com/libdns/libdns)
+Joohoi's ACME-DNS provider for [`libdns`](https://github.com/libdns/libdns)
 =======================
 
-[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/TODO:joohoi_acme_dns)
+[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/acmedns)
 
 This package implements the [libdns interfaces](https://github.com/libdns/libdns) for Joohoi's ACME-DNS.
 

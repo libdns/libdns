@@ -81,9 +81,11 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, recs []libdns
 
 // Implements libdns.RecordDeleter.
 //
-// Always returns and error since ACME-DNS API does not support record deletion.
+// DeleteRecords does nothing at all - ACME-DNS does not support record deletion.
+// However, older records are automatically deleted as newer records are added
+// (a rolling update of two records).
 func (p *Provider) DeleteRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
-	return nil, fmt.Errorf("joohoi_acme_dns provider does not support record deletion")
+	return nil, nil
 }
 
 // Interface guards.
