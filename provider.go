@@ -21,13 +21,11 @@ type DomainConfig struct {
 	ServerURL  string `json:"server_url,omitempty"`
 }
 
-type Domain = string
-
-// Provider.Configs defines a Domain -> DomainConfig mapping.
-// Configs map uses the same structure as ACME-DNS client
+// Provider.Configs defines a map from domain string to
+// DomainConfig. It uses the same structure as ACME-DNS client
 // JSON storage file (https://github.com/acme-dns/acme-dns-client).
 type Provider struct {
-	Configs map[Domain]DomainConfig `json:"config,omitempty"`
+	Configs map[string]DomainConfig `json:"config,omitempty"`
 }
 
 // Implements libdns.RecordAppender.
