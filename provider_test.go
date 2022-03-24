@@ -3,9 +3,7 @@ package joohoi_acme_dns
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"testing"
@@ -113,32 +111,4 @@ func TestAppendRecords(t *testing.T) {
 	if value3 != newRecords[0] && value3 != newRecords[1] {
 		t.Fatalf("Expected record %s, not found in %v", value2, newRecords)
 	}
-}
-
-func TestProviderCreation(t *testing.T) {
-	content, err := ioutil.ReadFile("configs.json")
-	if err != nil {
-		log.Fatalf("Failed to read file: %s", err)
-	}
-	var configs map[Domain]DomainConfig
-	err = json.Unmarshal(content, &configs)
-	if err != nil {
-		log.Fatalf("Failed to unmarshall json: %s", err)
-	}
-	p := Provider{Configs: configs}
-	records, err := p.AppendRecords(
-		context.TODO(),
-		"your.test.domain.example.com",
-		[]libdns.Record{
-			{
-				Type:  "TXT",
-				Name:  "_acme-challenge",
-				Value: "___validation_token_received_from_the_ca___",
-			},
-		},
-	)
-	if err != nil {
-		log.Fatalf("Failed to append records: %s", err)
-	}
-	fmt.Printf("Created records: %v\n", records)
 }
