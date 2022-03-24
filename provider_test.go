@@ -1,4 +1,4 @@
-package joohoi_acme_dns
+package acmedns
 
 import (
 	"context"
