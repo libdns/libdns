@@ -1,9 +1,10 @@
-package nicrudns
+package examples
 
 import (
 	"context"
 	"fmt"
 	"github.com/libdns/libdns"
+	"github.com/maetx777/libdns-nicru"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -19,7 +20,7 @@ var (
 )
 
 func ExampleLibdnsProvider() error {
-	provider := Provider{
+	provider := nicrudns.Provider{
 		OAuth2ClientID:   clientID,
 		OAuth2SecretID:   secretID,
 		Username:         username,
@@ -47,8 +48,8 @@ func ExampleLibdnsProvider() error {
 }
 
 func ExampleNicruClient() error {
-	config := &Config{
-		Credentials: &Credentials{
+	config := &nicrudns.Config{
+		Credentials: &nicrudns.Credentials{
 			OAuth2ClientID: clientID,
 			OAuth2SecretID: secretID,
 			Username:       username,
@@ -58,7 +59,7 @@ func ExampleNicruClient() error {
 		DnsServiceName: nicruServiceName,
 		CachePath:      cachePath,
 	}
-	client := NewClient(config)
+	client := nicrudns.NewClient(config)
 	var names = []string{`www`}
 	if response, err := client.AddA(names, `1.2.3.4`, `3600`); err != nil {
 		return errors.Wrap(err, `add records error`)

@@ -8,8 +8,8 @@ import (
 	"strconv"
 )
 
-func (client *Client) DownloadZone() (string, error) {
-	url := fmt.Sprintf(DownloadZoneUrlPattern, client.config.DnsServiceName, client.config.ZoneName)
+func (client *Client) DownloadZone(name string) (string, error) {
+	url := fmt.Sprintf(DownloadZoneUrlPattern, client.config.DnsServiceName, name)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return ``, errors.Wrap(err, RequestError.Error())
