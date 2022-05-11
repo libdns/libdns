@@ -2,6 +2,7 @@ package nicrudns
 
 import (
 	"encoding/xml"
+	"fmt"
 )
 
 type Request struct {
@@ -194,12 +195,19 @@ type Error struct {
 	Code string `xml:"code,attr" json:"code,omitempty"`
 }
 
+func describeError(e Error) string {
+	return fmt.Sprintf(`%s (code %s)`, e.Text, e.Code)
+}
+
 type Response struct {
 	XMLName xml.Name `xml:"response" json:"xml_name,omitempty"`
 	Text    string   `xml:",chardata" json:"text,omitempty"`
 	Status  string   `xml:"status" json:"status,omitempty"`
-	Errors  *Error   `xml:"errors" json:"errors,omitempty"`
-	Data    *Data    `xml:"data" json:"data,omitempty"`
+	Errors  struct {
+		Text  string `xml:",chardata" json:"text,omitempty"`
+		Error Error  `xml:"error" json:"error,omitempty"`
+	} `xml:"errors" json:"errors,omitempty"`
+	Data *Data `xml:"data" json:"data,omitempty"`
 }
 
 type Data struct {

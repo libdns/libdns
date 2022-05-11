@@ -46,7 +46,7 @@ func (client *Client) Add(request *Request) (*Response, error) {
 		}
 
 		if response.Status != SuccessStatus {
-			return nil, ApiNonSuccessError
+			return nil, errors.Wrap(ApiNonSuccessError, describeError(response.Errors.Error))
 		} else {
 			return response, nil
 		}

@@ -31,7 +31,7 @@ func (client *Client) GetServices() ([]*Service, error) {
 		return nil, errors.Wrap(err, XmlDecodeError.Error())
 	}
 	if apiResponse.Status != SuccessStatus {
-		return nil, errors.Wrap(ApiNonSuccessError, apiResponse.Status)
+		return nil, errors.Wrap(ApiNonSuccessError, describeError(apiResponse.Errors.Error))
 	}
 
 	return apiResponse.Data.Service, nil

@@ -2,6 +2,7 @@ package nicrudns
 
 import (
 	"bytes"
+	"encoding/xml"
 	"fmt"
 	"github.com/pkg/errors"
 	"net/http"
@@ -26,5 +27,16 @@ func (client *Client) DownloadZone(name string) (string, error) {
 	if err != nil {
 		return ``, errors.Wrap(err, BufferReadError.Error())
 	}
-	return buf.String(), nil
+	apiResponse := &Response{}
+	if err := xml.NewDecoder(bytes.NewBuffer(buf.Bytes())).Decode(&apiResponse); err == nil {
+		// if response structure is valid, this is unexpected result
+		if apiResponse.Errors.Error.Text != `` {
+			return ``, errors.Wrap(ApiNonSuccessError, describeError(apiResponse.Errors.Error))
+		} else {
+			return ``, errors.Wrap(ResponseError, `not a dns zone format`)
+		}
+	} else {
+		// else OK
+		return buf.String(), nil
+	}
 }
