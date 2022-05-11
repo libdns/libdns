@@ -8,7 +8,7 @@ type IClient interface {
 	AddTxt(names []string, target string, ttl string) (*Response, error)
 	CommitZone() (*Response, error)
 	DeleteRecord(id int) (*Response, error)
-	DownloadZone() (string, error)
+	DownloadZone(name string) (string, error)
 	GetRecords() ([]*RR, error)
 	GetARecords(nameFilter string, targetFilter string) ([]*RR, error)
 	GetAAAARecords(nameFilter string, targetFilter string) ([]*RR, error)
