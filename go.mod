@@ -1,4 +1,4 @@
-module github.com/maetx777/nicrudns
+module github.com/maetx777/libdns-nicru
 
 go 1.16
 
