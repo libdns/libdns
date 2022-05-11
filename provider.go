@@ -33,7 +33,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		CachePath:      p.CachePath,
 	})
 	var records []libdns.Record
-	rrs, err := client.GetARecords(`^.+$`, `^.+$`)
+	rrs, err := client.GetRecords()
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +62,33 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 				TTL:   ttl,
 			})
 		}
+		if rr.AAAA != nil {
+			records = append(records, libdns.Record{
+				ID:    rr.ID,
+				Type:  "AAAA",
+				Name:  rr.Name,
+				Value: rr.AAAA.String(),
+				TTL:   ttl,
+			})
+		}
+		if rr.Txt != nil {
+			records = append(records, libdns.Record{
+				ID:    rr.ID,
+				Type:  "TXT",
+				Name:  rr.Name,
+				Value: rr.Txt.String,
+				TTL:   ttl,
+			})
+		}
+		//if rr.Mx != nil {
+		//	records = append(records, libdns.Record{
+		//		ID:    rr.ID,
+		//		Type:  "MX",
+		//		Name:  rr.Name,
+		//		Value: rr.Mx.Exchange.Name,
+		//		TTL:   ttl,
+		//	})
+		//}
 	}
 	return records, nil
 }
@@ -118,18 +145,18 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 				Value: response.Data.Zone[0].Rr[0].Cname.Name,
 				TTL:   record.TTL,
 			})
-		case `MX`:
-			response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
-			if err != nil {
-				return nil, err
-			}
-			result = append(result, libdns.Record{
-				ID:    response.Data.Zone[0].Rr[0].ID,
-				Type:  record.Type,
-				Name:  response.Data.Zone[0].Rr[0].Name,
-				Value: response.Data.Zone[0].Rr[0].Mx.Exchange.Name,
-				TTL:   record.TTL,
-			})
+		//case `MX`:
+		//	response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	result = append(result, libdns.Record{
+		//		ID:    response.Data.Zone[0].Rr[0].ID,
+		//		Type:  record.Type,
+		//		Name:  response.Data.Zone[0].Rr[0].Name,
+		//		Value: response.Data.Zone[0].Rr[0].Mx.Exchange.Name,
+		//		TTL:   record.TTL,
+		//	})
 		case `TXT`:
 			response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
 			if err != nil {
@@ -167,34 +194,13 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 		DnsServiceName: p.NicRuServiceName,
 		CachePath:      p.CachePath,
 	})
-	existARecords, err := client.GetARecords(`^.+$`, `^.+$`)
+	allRecords, err := client.GetRecords()
 	if err != nil {
 		return nil, err
 	}
-	existAAAARecords, err := client.GetAAAARecords(`^.+$`, `^.+$`)
-	if err != nil {
-		return nil, err
-	}
-	existCNameRecords, err := client.GetCnameRecords(`^.+$`, `^.+$`)
-	if err != nil {
-		return nil, err
-	}
-	existMxRecords, err := client.GetMxRecords(`^.+$`, `^.+$`)
-	if err != nil {
-		return nil, err
-	}
-	existTxtRecords, err := client.GetTxtRecords(`^.+$`, `^.+$`)
-	if err != nil {
-		return nil, err
-	}
-	var allRecords []*RR
-	allRecords = append(allRecords, existARecords...)
-	allRecords = append(allRecords, existAAAARecords...)
-	allRecords = append(allRecords, existCNameRecords...)
-	allRecords = append(allRecords, existMxRecords...)
-	allRecords = append(allRecords, existTxtRecords...)
 	var result []libdns.Record
 	for _, record := range records {
+		//first delete exist records
 		if rec := getRecordByID(record.ID, allRecords); rec != nil {
 			id, err := strconv.ParseInt(rec.ID, 10, 64)
 			if err != nil {
@@ -204,6 +210,7 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 				return nil, err
 			}
 		}
+		// now add new records
 		switch record.Type {
 		case `A`:
 			response, err := client.AddA([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
@@ -253,18 +260,18 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 				Value: response.Data.Zone[0].Rr[0].Txt.String,
 				TTL:   record.TTL,
 			})
-		case `MX`:
-			response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
-			if err != nil {
-				return nil, err
-			}
-			result = append(result, libdns.Record{
-				ID:    response.Data.Zone[0].Rr[0].ID,
-				Type:  record.Type,
-				Name:  response.Data.Zone[0].Rr[0].Name,
-				Value: response.Data.Zone[0].Rr[0].Mx.Exchange.Name,
-				TTL:   record.TTL,
-			})
+		//case `MX`:
+		//	response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	result = append(result, libdns.Record{
+		//		ID:    response.Data.Zone[0].Rr[0].ID,
+		//		Type:  record.Type,
+		//		Name:  response.Data.Zone[0].Rr[0].Name,
+		//		Value: response.Data.Zone[0].Rr[0].Mx.Exchange.Name,
+		//		TTL:   record.TTL,
+		//	})
 		default:
 			return nil, errors.Wrap(NotImplementedRecordType, record.Type)
 		}

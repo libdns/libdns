@@ -9,6 +9,7 @@ type IClient interface {
 	CommitZone() (*Response, error)
 	DeleteRecord(id int) (*Response, error)
 	DownloadZone() (string, error)
+	GetRecords() ([]*RR, error)
 	GetARecords(nameFilter string, targetFilter string) ([]*RR, error)
 	GetAAAARecords(nameFilter string, targetFilter string) ([]*RR, error)
 	GetCnameRecords(nameFilter string, targetFilter string) ([]*RR, error)
