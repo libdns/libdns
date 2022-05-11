@@ -1,15 +1,15 @@
 package nicrudns
 
 type Config struct {
-	Credentials    *Credentials // структура с данными авторизации в апишке
-	ZoneName       string       // имя зоны
-	DnsServiceName string       // имя DNS-услуги
-	CachePath      string       // путь для хранения токена авторизации
+	Credentials    *Credentials // structure with credentials of nic.ru
+	ZoneName       string       // zone name
+	DnsServiceName string       // dns service name from nic.ru
+	CachePath      string       // path to save cached auth token
 }
 
 type Credentials struct {
 	OAuth2ClientID string
 	OAuth2SecretID string
-	Username       string
+	Username       string //username *****/NIC-D
 	Password       string
 }

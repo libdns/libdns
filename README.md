@@ -5,9 +5,7 @@ Golang client NIC.ru for [`libdns`](https://github.com/libdns/libdns)
 
 This package implements the [libdns interfaces](https://github.com/libdns/libdns) for NIC.ru, allowing you to manage DNS records.
 
-TODO: Show how to configure and use. Explain any caveats.
-
-Example:
+Usage Example:
 ```
 package nicrudns
 
