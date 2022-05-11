@@ -47,7 +47,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		if rr.A != nil {
 			records = append(records, libdns.Record{
 				ID:    rr.ID,
-				Type:  "A",
+				Type:  rr.Type,
 				Name:  rr.Name,
 				Value: rr.A.String(),
 				TTL:   ttl,
@@ -56,7 +56,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		if rr.Cname != nil {
 			records = append(records, libdns.Record{
 				ID:    rr.ID,
-				Type:  "CNAME",
+				Type:  rr.Type,
 				Name:  rr.Name,
 				Value: rr.Cname.Name,
 				TTL:   ttl,
@@ -65,7 +65,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		if rr.AAAA != nil {
 			records = append(records, libdns.Record{
 				ID:    rr.ID,
-				Type:  "AAAA",
+				Type:  rr.Type,
 				Name:  rr.Name,
 				Value: rr.AAAA.String(),
 				TTL:   ttl,
@@ -74,21 +74,26 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 		if rr.Txt != nil {
 			records = append(records, libdns.Record{
 				ID:    rr.ID,
-				Type:  "TXT",
+				Type:  rr.Type,
 				Name:  rr.Name,
 				Value: rr.Txt.String,
 				TTL:   ttl,
 			})
 		}
-		//if rr.Mx != nil {
-		//	records = append(records, libdns.Record{
-		//		ID:    rr.ID,
-		//		Type:  "MX",
-		//		Name:  rr.Name,
-		//		Value: rr.Mx.Exchange.Name,
-		//		TTL:   ttl,
-		//	})
-		//}
+		if rr.Mx != nil {
+			priority, err := strconv.ParseInt(rr.Mx.Preference, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			records = append(records, libdns.Record{
+				ID:       rr.ID,
+				Type:     rr.Type,
+				Name:     rr.Name,
+				Value:    rr.Mx.Exchange.Name,
+				TTL:      ttl,
+				Priority: int(priority),
+			})
+		}
 	}
 	return records, nil
 }
@@ -145,18 +150,23 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 				Value: response.Data.Zone[0].Rr[0].Cname.Name,
 				TTL:   record.TTL,
 			})
-		//case `MX`:
-		//	response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//	result = append(result, libdns.Record{
-		//		ID:    response.Data.Zone[0].Rr[0].ID,
-		//		Type:  record.Type,
-		//		Name:  response.Data.Zone[0].Rr[0].Name,
-		//		Value: response.Data.Zone[0].Rr[0].Mx.Exchange.Name,
-		//		TTL:   record.TTL,
-		//	})
+		case `MX`:
+			response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
+			if err != nil {
+				return nil, err
+			}
+			priority, err := strconv.ParseInt(response.Data.Zone[0].Rr[0].Mx.Preference, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, libdns.Record{
+				ID:       response.Data.Zone[0].Rr[0].ID,
+				Type:     record.Type,
+				Name:     response.Data.Zone[0].Rr[0].Name,
+				Value:    response.Data.Zone[0].Rr[0].Mx.Exchange.Name,
+				TTL:      record.TTL,
+				Priority: int(priority),
+			})
 		case `TXT`:
 			response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
 			if err != nil {
@@ -260,18 +270,20 @@ func (p *Provider) SetRecords(ctx context.Context, zone string, records []libdns
 				Value: response.Data.Zone[0].Rr[0].Txt.String,
 				TTL:   record.TTL,
 			})
-		//case `MX`:
-		//	response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//	result = append(result, libdns.Record{
-		//		ID:    response.Data.Zone[0].Rr[0].ID,
-		//		Type:  record.Type,
-		//		Name:  response.Data.Zone[0].Rr[0].Name,
-		//		Value: response.Data.Zone[0].Rr[0].Mx.Exchange.Name,
-		//		TTL:   record.TTL,
-		//	})
+		case `MX`:
+			response, err := client.AddCnames([]string{record.Name}, record.Value, strconv.Itoa(int(record.TTL.Seconds())))
+			if err != nil {
+				return nil, err
+			}
+			priority, err := strconv.ParseInt(response.Data.Zone[0].Rr[0].Mx.Preference, 10, 64)
+			result = append(result, libdns.Record{
+				ID:       response.Data.Zone[0].Rr[0].ID,
+				Type:     record.Type,
+				Name:     response.Data.Zone[0].Rr[0].Name,
+				Value:    response.Data.Zone[0].Rr[0].Mx.Exchange.Name,
+				TTL:      record.TTL,
+				Priority: int(priority),
+			})
 		default:
 			return nil, errors.Wrap(NotImplementedRecordType, record.Type)
 		}
