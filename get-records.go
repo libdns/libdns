@@ -19,10 +19,6 @@ func (client *Client) GetRecords() ([]*RR, error) {
 		return nil, errors.Wrap(err, ResponseError.Error())
 	}
 
-	//if response.StatusCode != http.StatusOK {
-	//	return nil, errors.Wrap(err, InvalidStatusCode.Error())
-	//}
-
 	buf := bytes.NewBuffer(nil)
 	if _, err := buf.ReadFrom(response.Body); err != nil {
 		return nil, errors.Wrap(err, BufferReadError.Error())

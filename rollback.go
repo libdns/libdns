@@ -14,9 +14,6 @@ func (client *Client) RollbackZone() (*Response, error) {
 		return nil, errors.Wrap(err, RequestError.Error())
 	}
 	response, err := client.Do(request)
-	//if response.StatusCode != http.StatusOK {
-	//	return nil, errors.Wrap(err, InvalidStatusCode.Error())
-	//}
 	apiResponse := Response{}
 	if err := xml.NewDecoder(response.Body).Decode(&apiResponse); err != nil {
 		return nil, errors.Wrap(err, XmlDecodeError.Error())
