@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"net/http"
-	"strconv"
 )
 
 func (client *Client) Add(request *Request) (*Response, error) {
@@ -28,27 +27,23 @@ func (client *Client) Add(request *Request) (*Response, error) {
 		return nil, errors.Wrap(err, ResponseError.Error())
 	}
 
-	if response.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(err, strconv.Itoa(response.StatusCode))
+	//if response.StatusCode != http.StatusOK {
+	//	return nil, errors.Wrap(err, InvalidStatusCode.Error())
+	//}
+
+	buf = bytes.NewBuffer(nil)
+	if _, err := buf.ReadFrom(response.Body); err != nil {
+		return nil, errors.Wrap(err, BufferReadError.Error())
+	}
+
+	apiResponse := &Response{}
+	if err := xml.NewDecoder(buf).Decode(&apiResponse); err != nil {
+		return nil, errors.Wrap(err, XmlDecodeError.Error())
+	}
+
+	if apiResponse.Status != SuccessStatus {
+		return nil, errors.Wrap(ApiNonSuccessError, describeError(apiResponse.Errors.Error))
 	} else {
-		buf = bytes.NewBuffer(nil)
-		if _, err := buf.ReadFrom(response.Body); err != nil {
-			return nil, errors.Wrap(err, BufferReadError.Error())
-		}
-		s := buf.String()
-
-		buf = bytes.NewBuffer(nil)
-		buf.WriteString(s)
-
-		response := &Response{}
-		if err := xml.NewDecoder(buf).Decode(&response); err != nil {
-			return nil, errors.Wrap(err, XmlDecodeError.Error())
-		}
-
-		if response.Status != SuccessStatus {
-			return nil, errors.Wrap(ApiNonSuccessError, describeError(response.Errors.Error))
-		} else {
-			return response, nil
-		}
+		return apiResponse, nil
 	}
 }

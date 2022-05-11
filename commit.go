@@ -17,9 +17,6 @@ func (client *Client) CommitZone() (*Response, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, ResponseError.Error())
 	}
-	if response.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(err, InvalidStatusCode.Error())
-	}
 	apiResponse := Response{}
 	if err := xml.NewDecoder(response.Body).Decode(&apiResponse); err != nil {
 		return nil, errors.Wrap(err, XmlDecodeError.Error())

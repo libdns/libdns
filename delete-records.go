@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"net/http"
-	"strconv"
 )
 
 func (client *Client) DeleteRecord(id int) (*Response, error) {
@@ -18,9 +17,9 @@ func (client *Client) DeleteRecord(id int) (*Response, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, ResponseError.Error())
 	}
-	if response.StatusCode != http.StatusOK {
-		return nil, errors.Wrap(InvalidStatusCode, strconv.Itoa(response.StatusCode))
-	}
+	//if response.StatusCode != http.StatusOK {
+	//	return nil, errors.Wrap(InvalidStatusCode, strconv.Itoa(response.StatusCode))
+	//}
 	apiResponse := Response{}
 	if err := xml.NewDecoder(response.Body).Decode(&apiResponse); err != nil {
 		return nil, errors.Wrap(err, XmlDecodeError.Error())
