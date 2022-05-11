@@ -6,7 +6,7 @@ func (client *Client) AddA(names []string, target string, ttl string) (*Response
 			Rr: []*RR{},
 		},
 	}
-	tgt := A(target)
+	tgt := Address(target)
 	for _, name := range names {
 		request.RrList.Rr = append(request.RrList.Rr, &RR{
 			Name: name,
