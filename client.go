@@ -16,7 +16,9 @@ func (p *Provider) createRecord(ctx context.Context, zoneInfo netlifyZone, recor
 	if err != nil {
 		return netlifyDNSRecord{}, err
 	}
-
+	print(zoneInfo.Name)
+	print(record.Name)
+	print(record.Value)
 	reqURL := fmt.Sprintf("%s/dns_zones/%s/dns_records", baseURL, zoneInfo.ID)
 	print(reqURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(jsonBytes))
