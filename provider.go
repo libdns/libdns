@@ -19,7 +19,7 @@ type Provider struct {
 	// unless you are only using `GetRecords()`, in which case
 	// the second can be changed to Read.
 	PersonnalAccessToken string `json:"api_token,omitempty"`
-	Logger               zap.Logger
+	Logger               *zap.Logger
 	zones                map[string]netlifyZone
 	zonesMu              sync.Mutex
 }
