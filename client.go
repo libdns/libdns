@@ -138,9 +138,8 @@ func (p *Provider) doAPIRequest(req *http.Request, result interface{}) (netlifyR
 	if len(respData.Errors) > 0 {
 		return netlifyResponse{}, fmt.Errorf("got errors: HTTP %d: %+v", resp.StatusCode, respData.Errors)
 	}
-
+	p.Logger.Info(string(respData.Result))
 	if len(respData.Result) > 0 && result != nil {
-		p.Logger.Info(respData.Result)
 		err = json.Unmarshal(respData.Result, result)
 		if err != nil {
 			return netlifyResponse{}, err
