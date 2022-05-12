@@ -16,11 +16,11 @@ func (p *Provider) createRecord(ctx context.Context, zoneInfo netlifyZone, recor
 	if err != nil {
 		return netlifyDNSRecord{}, err
 	}
-	print(zoneInfo.Name)
-	print(record.Name)
-	print(record.Value)
+	p.Logger.Info(zoneInfo.Name)
+	p.Logger.Info(record.Name)
+	p.Logger.Info(record.Value)
 	reqURL := fmt.Sprintf("%s/dns_zones/%s/dns_records", baseURL, zoneInfo.ID)
-	print(reqURL)
+	p.Logger.Info(reqURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(jsonBytes))
 	if err != nil {
 		return netlifyDNSRecord{}, err
@@ -140,7 +140,7 @@ func (p *Provider) doAPIRequest(req *http.Request, result interface{}) (netlifyR
 	}
 
 	if len(respData.Result) > 0 && result != nil {
-		print(respData.Result)
+		p.Logger.Info(respData.Result)
 		err = json.Unmarshal(respData.Result, result)
 		if err != nil {
 			return netlifyResponse{}, err

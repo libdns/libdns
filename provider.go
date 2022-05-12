@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/libdns/libdns"
+	"go.uber.org/zap"
 )
 
 // Provider implements the libdns interfaces for Cloudflare.
@@ -17,10 +18,10 @@ type Provider struct {
 	// need two permissions: Zone-Zone-Read and Zone-DNS-Edit,
 	// unless you are only using `GetRecords()`, in which case
 	// the second can be changed to Read.
-	PersonnalAccessToken string
-
-	zones   map[string]netlifyZone
-	zonesMu sync.Mutex
+	PersonnalAccessToken string `json:"api_token,omitempty"`
+	Logger               zap.Logger
+	zones                map[string]netlifyZone
+	zonesMu              sync.Mutex
 }
 
 // GetRecords lists all the records in the zone.
