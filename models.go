@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/libdns/libdns"
-	"github.com/netlify/open-api/go/models"
+	"github.com/netlify/open-api/v2/go/models"
 )
 
 type netlifyZone struct {
