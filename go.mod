@@ -1,6 +1,6 @@
 module github.com/CL0Pinette/libdns-netlify
 
-go 1.17
+go 1.16
 
 require github.com/netlify/open-api v1.4.0
 
