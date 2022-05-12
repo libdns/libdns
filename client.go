@@ -140,6 +140,7 @@ func (p *Provider) doAPIRequest(req *http.Request, result interface{}) (netlifyR
 	}
 
 	if len(respData.Result) > 0 && result != nil {
+		print(respData.Result)
 		err = json.Unmarshal(respData.Result, result)
 		if err != nil {
 			return netlifyResponse{}, err
