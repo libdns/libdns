@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 
@@ -16,11 +17,7 @@ func (p *Provider) createRecord(ctx context.Context, zoneInfo netlifyZone, recor
 	if err != nil {
 		return netlifyDNSRecord{}, err
 	}
-	p.Logger.Info(zoneInfo.Name)
-	p.Logger.Info(record.Name)
-	p.Logger.Info(record.Value)
 	reqURL := fmt.Sprintf("%s/dns_zones/%s/dns_records", baseURL, zoneInfo.ID)
-	p.Logger.Info(reqURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, bytes.NewReader(jsonBytes))
 	if err != nil {
 		return netlifyDNSRecord{}, err
@@ -28,7 +25,7 @@ func (p *Provider) createRecord(ctx context.Context, zoneInfo netlifyZone, recor
 	req.Header.Set("Content-Type", "application/json")
 
 	var result netlifyDNSRecord
-	_, err = p.doAPIRequest(req, &result)
+	err = p.doAPIRequest(req, false, false, false, true, &result)
 	if err != nil {
 		return netlifyDNSRecord{}, err
 	}
@@ -53,7 +50,7 @@ func (p *Provider) updateRecord(ctx context.Context, oldRec netlifyDNSRecord, ne
 	req.Header.Set("Content-Type", "application/json")
 
 	var result netlifyDNSRecord
-	_, err = p.doAPIRequest(req, &result)
+	err = p.doAPIRequest(req, false, false, false, true, &result)
 	return result, err
 }
 
@@ -65,15 +62,27 @@ func (p *Provider) getDNSRecords(ctx context.Context, zoneInfo netlifyZone, rec 
 		qs.Set("content", rec.Value)
 	}
 
-	reqURL := fmt.Sprintf("%s/zones/%s/dns_records/%s", baseURL, zoneInfo.ID, qs.Encode())
+	reqURL := fmt.Sprintf("%s/dns_zones/%s/dns_records", baseURL, zoneInfo.ID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	var results []netlifyDNSRecord
-	_, err = p.doAPIRequest(req, &results)
-	return results, err
+	err = p.doAPIRequest(req, false, false, true, false, &results)
+	var rest_to_return []netlifyDNSRecord
+	for _, res := range results {
+		if res.Hostname == libdns.AbsoluteName(rec.Name, zoneInfo.Name) && res.Type == rec.Type {
+			rest_to_return = append(rest_to_return, res)
+		}
+	}
+	if len(rest_to_return) == 0 {
+		return nil, fmt.Errorf("Can't find DNS record %s", libdns.AbsoluteName(rec.Name, zoneInfo.Name))
+	}
+	if err != nil {
+		return nil, err
+	}
+	return rest_to_return, nil
 }
 
 func (p *Provider) getZoneInfo(ctx context.Context, zoneName string) (netlifyZone, error) {
@@ -90,7 +99,7 @@ func (p *Provider) getZoneInfo(ctx context.Context, zoneName string) (netlifyZon
 
 	qs := make(url.Values)
 	qs.Set("name", zoneName)
-	reqURL := fmt.Sprintf("%s/dns_zones?%s", baseURL, qs)
+	reqURL := fmt.Sprintf("%s/dns_zones?%s", baseURL, qs.Encode())
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
@@ -98,7 +107,7 @@ func (p *Provider) getZoneInfo(ctx context.Context, zoneName string) (netlifyZon
 	}
 
 	var zones []netlifyZone
-	_, err = p.doAPIRequest(req, &zones)
+	err = p.doAPIRequest(req, true, false, true, false, &zones)
 	if err != nil {
 		return netlifyZone{}, err
 	}
@@ -117,37 +126,71 @@ func (p *Provider) getZoneInfo(ctx context.Context, zoneName string) (netlifyZon
 // error including error information from the API if applicable. If result is a
 // non-nil pointer, the result field from the API response will be decoded into
 // it for convenience.
-func (p *Provider) doAPIRequest(req *http.Request, result interface{}) (netlifyResponse, error) {
+func (p *Provider) doAPIRequest(req *http.Request, isZone bool, isDel bool, isGet bool, isSolo bool, result interface{}) error {
 	req.Header.Set("Authorization", "Bearer "+p.PersonnalAccessToken)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return netlifyResponse{}, err
+		return err
 	}
 	defer resp.Body.Close()
-
-	var respData netlifyResponse
-	err = json.NewDecoder(resp.Body).Decode(&respData)
-	if err != nil {
-		return netlifyResponse{}, err
-	}
+	body, err := ioutil.ReadAll(resp.Body)
 
 	if resp.StatusCode >= 400 {
-		return netlifyResponse{}, fmt.Errorf("got error status: HTTP %d: %+v", resp.StatusCode, respData.Errors)
-	}
-	if len(respData.Errors) > 0 {
-		return netlifyResponse{}, fmt.Errorf("got errors: HTTP %d: %+v", resp.StatusCode, respData.Errors)
-	}
-	p.Logger.Info(string(respData.Result))
-	if len(respData.Result) > 0 && result != nil {
-		err = json.Unmarshal(respData.Result, result)
-		if err != nil {
-			return netlifyResponse{}, err
-		}
-		respData.Result = nil
+		return fmt.Errorf("got error status: HTTP %d: %+v", resp.StatusCode, string(body))
 	}
 
-	return respData, err
+	if isDel && !isZone {
+		if len(body) > 0 {
+			var err netlifyDNSDeleteError
+			json.Unmarshal(body, &result)
+			return fmt.Errorf(err.Message)
+		}
+		return err
+	}
+
+	if isZone && isGet {
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			return err
+		}
+		return err
+	}
+
+	if !isZone && isGet && !isSolo {
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			return err
+		}
+		return err
+	}
+
+	if !isZone && isGet && isSolo {
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			return err
+		}
+		return err
+	}
+
+	if !isZone && isDel {
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			result = nil
+			return nil
+		}
+		return err
+	}
+
+	if !isZone && isSolo && !isGet {
+		err = json.Unmarshal(body, &result)
+		if err != nil {
+			return nil
+		}
+		return err
+	}
+
+	return err
 }
 
 const baseURL = "https://api.netlify.com/api/v1"

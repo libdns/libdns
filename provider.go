@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/libdns/libdns"
-	"go.uber.org/zap"
 )
 
 // Provider implements the libdns interfaces for Cloudflare.
@@ -19,7 +18,6 @@ type Provider struct {
 	// unless you are only using `GetRecords()`, in which case
 	// the second can be changed to Read.
 	PersonnalAccessToken string `json:"api_token,omitempty"`
-	Logger               *zap.Logger
 	zones                map[string]netlifyZone
 	zonesMu              sync.Mutex
 }
@@ -38,7 +36,7 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 	}
 
 	var result []netlifyDNSRecord
-	_, err = p.doAPIRequest(req, &result)
+	err = p.doAPIRequest(req, false, false, true, false, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +88,7 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 
 		if rec.ID == "" {
 			// record ID is required; try to find it with what was provided
-			exactMatches, err := p.getDNSRecords(ctx, zoneInfo, rec, true)
+			exactMatches, err := p.getDNSRecords(ctx, zoneInfo, rec, false)
 			if err != nil {
 				return nil, err
 			}
@@ -103,18 +101,22 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 
 		for _, delRec := range deleteQueue {
 			reqURL := fmt.Sprintf("%s/dns_zones/%s/dns_records/%s", baseURL, zoneInfo.ID, delRec.ID)
-			req, err := http.NewRequestWithContext(ctx, "DELETE", reqURL, nil)
-			if err != nil {
-				return nil, err
-			}
 
+			req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 			var result netlifyDNSRecord
-			_, err = p.doAPIRequest(req, &result)
+			err = p.doAPIRequest(req, false, false, true, true, &result)
 			if err != nil {
 				return nil, err
 			}
 
 			recs = append(recs, result.libdnsRecord(zone))
+
+			req, err = http.NewRequestWithContext(ctx, "DELETE", reqURL, nil)
+
+			err = p.doAPIRequest(req, false, true, false, true, &result)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 	}

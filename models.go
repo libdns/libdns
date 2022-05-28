@@ -57,3 +57,27 @@ type netlifyResultInfo struct {
 	Count      int `json:"count"`
 	TotalCount int `json:"total_count"`
 }
+
+type netlifyResultDNSZones struct {
+	Id                   string              `json:"id,omitempty"`
+	Name                 string              `json:"name,omitempty"`
+	Errors               []string            `json:"errors,omitempty"`
+	SupportedRecordTypes []string            `json:"supported_record_types,omitempty"`
+	UserID               string              `json:"user_id,omitempty"`
+	CreatedAt            string              `json:"created_at,omitempty"`
+	UpdatedAt            string              `json:"updated_at,omitempty"`
+	Records              []*models.DNSRecord `json:"records,omitempty"`
+	DnsServers           []string            `json:"dns_servers,omitempty"`
+	AccountId            string              `json:"account_id,omitempty"`
+	SiteId               string              `json:"site_id,omitempty"`
+	AccountSlug          string              `json:"account_slug,omitempty"`
+	AccountName          string              `json:"account_name,omitempty"`
+	Domain               string              `json:"domain,omitempty"`
+	Ipv6Enabled          bool                `json:"ipv6_enabled,omitempty"`
+	Dedicated            bool                `json:"dedicated,omitempty"`
+}
+
+type netlifyDNSDeleteError struct {
+	Code    int    `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
