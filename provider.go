@@ -12,7 +12,7 @@ import (
 // Provider implements the libdns interfaces for Netlify.
 type Provider struct {
 	// Personnal Access Token is required to Authenticate
-	// Yourself to Netlify's API
+	// yourself to Netlify's API
 	PersonnalAccessToken string `json:"api_token,omitempty"`
 	zones                map[string]netlifyZone
 	zonesMu              sync.Mutex

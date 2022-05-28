@@ -1,7 +1,6 @@
 package netlify
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/libdns/libdns"
@@ -37,44 +36,6 @@ func netlifyRecord(r libdns.Record) netlifyDNSRecord {
 			Priority: int64(r.Priority),
 		},
 	}
-}
-
-// All API responses have this structure.
-type netlifyResponse struct {
-	Result  json.RawMessage `json:"result,omitempty"`
-	Success bool            `json:"success"`
-	Errors  []struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
-	} `json:"errors,omitempty"`
-	Messages   []interface{}      `json:"messages,omitempty"`
-	ResultInfo *netlifyResultInfo `json:"result_info,omitempty"`
-}
-
-type netlifyResultInfo struct {
-	Page       int `json:"page"`
-	PerPage    int `json:"per_page"`
-	Count      int `json:"count"`
-	TotalCount int `json:"total_count"`
-}
-
-type netlifyResultDNSZones struct {
-	Id                   string              `json:"id,omitempty"`
-	Name                 string              `json:"name,omitempty"`
-	Errors               []string            `json:"errors,omitempty"`
-	SupportedRecordTypes []string            `json:"supported_record_types,omitempty"`
-	UserID               string              `json:"user_id,omitempty"`
-	CreatedAt            string              `json:"created_at,omitempty"`
-	UpdatedAt            string              `json:"updated_at,omitempty"`
-	Records              []*models.DNSRecord `json:"records,omitempty"`
-	DnsServers           []string            `json:"dns_servers,omitempty"`
-	AccountId            string              `json:"account_id,omitempty"`
-	SiteId               string              `json:"site_id,omitempty"`
-	AccountSlug          string              `json:"account_slug,omitempty"`
-	AccountName          string              `json:"account_name,omitempty"`
-	Domain               string              `json:"domain,omitempty"`
-	Ipv6Enabled          bool                `json:"ipv6_enabled,omitempty"`
-	Dedicated            bool                `json:"dedicated,omitempty"`
 }
 
 type netlifyDNSDeleteError struct {
