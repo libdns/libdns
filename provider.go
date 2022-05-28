@@ -9,14 +9,10 @@ import (
 	"github.com/libdns/libdns"
 )
 
-// Provider implements the libdns interfaces for Cloudflare.
-// TODO: Support pagination and retries, handle rate limits.
+// Provider implements the libdns interfaces for Netlify.
 type Provider struct {
-	// API token is used for authentication. Make sure to use a
-	// scoped API **token**, NOT a global API **key**. It will
-	// need two permissions: Zone-Zone-Read and Zone-DNS-Edit,
-	// unless you are only using `GetRecords()`, in which case
-	// the second can be changed to Read.
+	// Personnal Access Token is required to Authenticate
+	// Yourself to Netlify's API
 	PersonnalAccessToken string `json:"api_token,omitempty"`
 	zones                map[string]netlifyZone
 	zonesMu              sync.Mutex
