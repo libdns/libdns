@@ -1,4 +1,4 @@
-module github.com/CL0Pinette/libdns-netlify
+module github.com/libdns/netlify
 
 go 1.17
 

@@ -8,8 +8,8 @@ import (
 
 	"github.com/joho/godotenv"
 
-	netlify "github.com/CL0Pinette/libdns-netlify"
 	"github.com/libdns/libdns"
+	netlify "github.com/libdns/netlify"
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 		return
 	}
 	provider := netlify.Provider{
-		PersonnalAccessToken: token,
+		PersonalAccessToken: token,
 	}
 
 	records, err := provider.GetRecords(context.TODO(), zone)

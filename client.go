@@ -130,7 +130,7 @@ func (p *Provider) getZoneInfo(ctx context.Context, zoneName string) (netlifyZon
 // nil if there was no error, the error otherwise. The decoded content is passed
 // to the calling function by the result variable
 func (p *Provider) doAPIRequest(req *http.Request, isZone bool, isDel bool, isGet bool, isSolo bool, result interface{}) error {
-	req.Header.Set("Authorization", "Bearer "+p.PersonnalAccessToken)
+	req.Header.Set("Authorization", "Bearer "+p.PersonalAccessToken)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
