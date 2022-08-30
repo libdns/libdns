@@ -1,23 +1,3 @@
-Scaleway for [`libdns`](https://github.com/libdns/libdns)
-=======================
-
-[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/scaleway)
-
-This package implements the [libdns interfaces](https://github.com/libdns/libdns) for [Scaleway](https://scaleway.com), allowing you to manage
-DNS records.
-
-## Authenticating
-
-To authenticate you need to supply following Scaleway credentials:
-
-- The Scaleway secret key (aka API key)
-- The Scaleway organization ID
-
-## Example
-
-Here's a minimal example of how to get all your DNS records using this `libdns` provider (see `_example/main.go`)
-
-```go
 package main
 
 import (
@@ -100,4 +80,3 @@ func main() {
 		}
 	}
 }
-```
