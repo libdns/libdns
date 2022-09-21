@@ -41,9 +41,11 @@ recs, err := provider.GetRecords(ctx, zone)
 
 // create records (AppendRecords is similar)
 newRecs, err := provider.SetRecords(ctx, zone, []libdns.Record{
-	Type:  "A",
-	Name:  "sub",
-	Value: "1.2.3.4",
+	{
+		Type:  "A",
+		Name:  "sub",
+		Value: "1.2.3.4",
+	},
 })
 
 // delete records (this example uses provider-assigned ID)
