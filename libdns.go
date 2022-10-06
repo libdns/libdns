@@ -32,6 +32,8 @@ package libdns
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -90,6 +92,12 @@ type RecordDeleter interface {
 }
 
 // Record is a generalized representation of a DNS record.
+//
+// The values of this struct should be free of zone-file-specific syntax,
+// except if this struct's fields do not sufficiently represent all the
+// fields of a certain record type; in that case, the remaining data for
+// which there are not specific fields should be stored in the Value as
+// it appears in the zone file.
 type Record struct {
 	// provider-specific metadata
 	ID string
@@ -101,7 +109,71 @@ type Record struct {
 	TTL   time.Duration
 
 	// type-dependent record fields
-	Priority int // used by MX, SRV, and URI records
+	Priority uint // HTTPS, MX, SRV, and URI records
+	Weight   uint // SRV and URI records
+}
+
+// ToSRV parses the record into a SRV struct with fully-parsed, literal values.
+//
+// EXPERIMENTAL; subject to change or removal.
+func (r Record) ToSRV() (SRV, error) {
+	if r.Type != "SRV" {
+		return SRV{}, fmt.Errorf("record type not SRV: %s", r.Type)
+	}
+
+	fields := strings.Fields(r.Value)
+	if len(fields) != 2 {
+		return SRV{}, fmt.Errorf("malformed SRV value; expected: '<port> <target>'")
+	}
+
+	port, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return SRV{}, fmt.Errorf("invalid port %s: %v", fields[0], err)
+	}
+	if port < 0 {
+		return SRV{}, fmt.Errorf("port cannot be < 0: %d", port)
+	}
+
+	parts := strings.SplitN(r.Name, ".", 3)
+	if len(parts) < 3 {
+		return SRV{}, fmt.Errorf("name %v does not contain enough fields; expected format: '_service._proto.name'", r.Name)
+	}
+
+	return SRV{
+		Service:  strings.TrimPrefix(parts[0], "_"),
+		Proto:    strings.TrimPrefix(parts[1], "_"),
+		Name:     parts[2],
+		Priority: r.Priority,
+		Weight:   r.Weight,
+		Port:     uint(port),
+		Target:   fields[1],
+	}, nil
+}
+
+// SRV contains all the parsed data of an SRV record.
+//
+// EXPERIMENTAL; subject to change or removal.
+type SRV struct {
+	Service  string // no leading "_"
+	Proto    string // no leading "_"
+	Name     string
+	Priority uint
+	Weight   uint
+	Port     uint
+	Target   string
+}
+
+// ToRecord converts the parsed SRV data to a Record struct.
+//
+// EXPERIMENTAL; subject to change or removal.
+func (s SRV) ToRecord() Record {
+	return Record{
+		Type:     "SRV",
+		Name:     fmt.Sprintf("_%s._%s.%s", s.Service, s.Proto, s.Name),
+		Priority: s.Priority,
+		Weight:   s.Weight,
+		Value:    fmt.Sprintf("%d %s", s.Port, s.Target),
+	}
 }
 
 // RelativeName makes fqdn relative to zone. For example, for a FQDN of
