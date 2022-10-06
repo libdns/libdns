@@ -1,3 +1,5 @@
-module github.com/libdns/libdns
+module github.com/libdns/njalla
 
-go 1.18
+go 1.16
+
+require github.com/libdns/libdns v0.2.1
