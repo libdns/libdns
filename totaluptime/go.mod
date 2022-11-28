@@ -1,4 +1,4 @@
-module github.com/kmei3560/libdns/totaluptime
+module github.com/libdns/totaluptime
 
 go 1.19
 

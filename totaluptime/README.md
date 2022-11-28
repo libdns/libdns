@@ -38,12 +38,13 @@ import (
 	"github.com/libdns/totaluptime"
 )
 
-func main() {
-	var provider totaluptime.Provider
+func main() func main() {
+	provider := totaluptime.Provider{
+		Username: "USERNAME", // provider API username
+		Password: "PASSWORD", // provider API password
+	}
 
-	provider.Username = USERNAME      // provider API username
-	provider.Password = PASSWORD      // provider API password
-	zone := "__enter_dns_zone_here__" // zone in provider account
+	zone := "DNS_ZONE" // zone in provider account
 	ctx := context.Background()
 
 	result, err := provider.GetRecords(ctx, zone)

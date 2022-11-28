@@ -9,18 +9,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kmei3560/libdns/totaluptime"
 	"github.com/libdns/libdns"
+	"github.com/libdns/totaluptime"
 )
 
 func main() {
-	var provider totaluptime.Provider
 	var rec libdns.Record
 	var recs []libdns.Record
 
-	provider.Username = USERNAME      // provider API username
-	provider.Password = PASSWORD      // provider API password
-	zone := "__enter_dns_zone_here__" // zone in provider account
+	provider := totaluptime.Provider{
+		Username: "USERNAME", // provider API username
+		Password: "PASSWORD", // provider API password
+	}
+	zone := "DNS_ZONE" // zone in provider account
 	ctx := context.Background()
 
 	// GetRecords demonstration -------------------------------------------------------------------
