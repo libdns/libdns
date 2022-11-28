@@ -14,15 +14,15 @@ This package supports basic authentication with Total Uptime's API. It's recomme
   * DNS: **Enabled**
     * Information: **Read**
     * Domains: **Full**
-  * (all other access set to "Disabled")
+  * *(all other access set to "Disabled")*
 
 * Settings -> Users -> Add
     * First Name: **API**
     * Last Name: **User**
-    * User Name (Email): **apiuser@mydomain.com**  (can be anything and does not need to receive mail)
-    * Active: **[ X ]** (checked)
+    * User Name (Email): **apiuser@mydomain.com**  *(can be anything and does not need to receive mail)*
+    * Active: **[ X ]** *(checked)*
     * Role: **API_User_Role**
-    * API Account: **[ X ]** (checked)
+    * API Account: **[ X ]** *(checked)*
 
 ## Example
 
