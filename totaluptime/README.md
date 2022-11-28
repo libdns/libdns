@@ -1,26 +1,56 @@
-**DEVELOPER INSTRUCTIONS:**
-
-This repo is a template for developers to use when creating new [libdns](https://github.com/libdns/libdns) provider implementations.
-
-Be sure to update:
-
-- The package name
-- The Go module name in go.mod
-- The latest `libdns/libdns` version in go.mod
-- All comments and documentation, including README below and godocs
-- License (must be compatible with Apache/MIT)
-- All "TODO:"s is in the code
-- All methods that currently do nothing
-
-Remove this section from the readme before publishing.
-
----
-
-\<PROVIDER NAME\> for [`libdns`](https://github.com/libdns/libdns)
+Total Uptime for [`libdns`](https://github.com/libdns/libdns)
 =======================
 
-[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/TODO:PROVIDER_NAME)
+[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/totaluptime)
 
-This package implements the [libdns interfaces](https://github.com/libdns/libdns) for \<PROVIDER\>, allowing you to manage DNS records.
+This package implements the [libdns interfaces](https://github.com/libdns/libdns) for Total Uptime, allowing you to manage DNS records.
 
-TODO: Show how to configure and use. Explain any caveats.
+## Authenticating
+
+This package supports basic authentication with Total Uptime's API. It's recommended that you create a role and user specific to API use, so that you can ensure least-privilege access to the account. Listed below are the steps to achieve this using Total Uptime's management portal:
+
+* Settings -> Roles & Security -> Role Management -> Add
+  * Name: **API_User_Role**
+  * DNS: **Enabled**
+    * Information: **Read**
+    * Domains: **Full**
+  * (all other access set to "Disabled")
+
+* Settings -> Users -> Add
+    * First Name: **API**
+    * Last Name: **User**
+    * User Name (Email): **apiuser@mydomain.com**  (can be anything and does not need to receive mail)
+    * Active: **[ X ]** (checked)
+    * Role: **API_User_Role**
+    * API Account: **[ X ]** (checked)
+
+## Example
+
+Here's a minimal example of how to list all DNS records using this `libdns` provider (see `examples/main.go` for more examples)
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/libdns/totaluptime"
+)
+
+func main() {
+	var provider totaluptime.Provider
+
+	provider.Username = USERNAME      // provider API username
+	provider.Password = PASSWORD      // provider API password
+	zone := "__enter_dns_zone_here__" // zone in provider account
+	ctx := context.Background()
+
+	result, err := provider.GetRecords(ctx, zone)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(result)
+}
+```

@@ -1,52 +1,149 @@
 package main
 
 import (
-	"encoding/base64"
+	"bufio"
+	"context"
+	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/kmei3560/libdns/totaluptime"
+	"github.com/libdns/libdns"
 )
-
-const (
-	REMOTEURL = "https://api.totaluptime.com/CloudDNS/Domain/All"
-)
-
-var provider totaluptime.Provider
 
 func main() {
-	client := http.Client{}
+	var provider totaluptime.Provider
+	var rec libdns.Record
+	var recs []libdns.Record
 
-	// configure http basic auth
-	auth := USERNAME + ":" + PASSWORD
-	basicAuth := base64.StdEncoding.EncodeToString([]byte(auth))
+	provider.Username = USERNAME      // provider API username
+	provider.Password = PASSWORD      // provider API password
+	zone := "__enter_dns_zone_here__" // zone in provider account
+	ctx := context.Background()
 
-	// configure http request
-	req, err := http.NewRequest(http.MethodGet, REMOTEURL, nil)
+	// GetRecords demonstration -------------------------------------------------------------------
+	fmt.Printf("List all records in zone: %s "+strings.Repeat("-", 80), zone)
+	pauseForUser()
+
+	result, err := provider.GetRecords(ctx, zone)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 
-	req.Header.Add("Authorization", "Basic "+basicAuth)
-	req.Header.Set("Content-Type", "application/json")
+	fmt.Println(PrettyPrint(result))
 
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
+	// AppendRecords demonstration ----------------------------------------------------------------
+	fmt.Printf("Append new records to zone: %s "+strings.Repeat("-", 80), zone)
+	pauseForUser()
+
+	recs = nil
+	rec = libdns.Record{
+		Type:  "TXT",
+		Name:  "test-txt-record",
+		Value: "txt record contents",
+		TTL:   3600 * time.Second,
 	}
-	defer resp.Body.Close()
+	recs = append(recs, rec)
 
-	body, err := io.ReadAll(resp.Body)
+	rec = libdns.Record{
+		Type:  "CNAME",
+		Name:  "google",
+		Value: "www.google.com",
+		TTL:   3600 * time.Second,
+	}
+	recs = append(recs, rec)
+
+	result, err = provider.AppendRecords(ctx, zone, recs)
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
 	}
 
-	// body, err := httputil.DumpResponse(resp, true)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
+	fmt.Println(PrettyPrint(result))
 
-	fmt.Println(string(body))
+	// SetRecords demonstration -------------------------------------------------------------------
+	fmt.Printf("Set new records to zone (both append and modify): %s "+strings.Repeat("-", 80), zone)
+	pauseForUser()
+
+	recs = nil
+	rec = libdns.Record{
+		Type:  "TXT",
+		Name:  "test-txt-record",
+		Value: "txt record contents have been updated", //updated
+		TTL:   60 * time.Second,                        // updated
+	}
+	recs = append(recs, rec)
+
+	rec = libdns.Record{
+		Type:  "CNAME",
+		Name:  "bing", // record is net-new
+		Value: "www.bing.com",
+		TTL:   3600 * time.Second,
+	}
+	recs = append(recs, rec)
+
+	result, err = provider.SetRecords(ctx, zone, recs)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(PrettyPrint(result))
+
+	// DeleteRecords demonstration ----------------------------------------------------------------
+	fmt.Printf("Delete test records in zone: %s "+strings.Repeat("-", 80), zone)
+	pauseForUser()
+
+	recs = nil
+	rec = libdns.Record{
+		Type:  "TXT",
+		Name:  "test-txt-record",
+		Value: "txt record contents",
+		TTL:   3600 * time.Second,
+	}
+	recs = append(recs, rec)
+
+	rec = libdns.Record{
+		Type:  "CNAME",
+		Name:  "google",
+		Value: "www.google.com",
+		TTL:   3600 * time.Second,
+	}
+	recs = append(recs, rec)
+
+	rec = libdns.Record{
+		Type:  "CNAME",
+		Name:  "bing",
+		Value: "www.bing.com",
+		TTL:   3600 * time.Second,
+	}
+	recs = append(recs, rec)
+
+	result, err = provider.DeleteRecords(ctx, zone, recs)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(PrettyPrint(result))
+
+	// GetRecords demonstration -------------------------------------------------------------------
+	fmt.Printf("List all (original) records in zone: %s "+strings.Repeat("-", 80), zone)
+	pauseForUser()
+
+	result, err = provider.GetRecords(ctx, zone)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(PrettyPrint(result))
+}
+
+func pauseForUser() {
+	fmt.Printf("\nPress [Enter] to continue...\n")
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
+}
+
+func PrettyPrint(ugly interface{}) string {
+	pretty, _ := json.MarshalIndent(ugly, "", "\t")
+	return fmt.Sprintln(string(pretty))
 }
