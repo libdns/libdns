@@ -34,6 +34,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/libdns/totaluptime"
 )
@@ -49,7 +50,7 @@ func main() func main() {
 
 	result, err := provider.GetRecords(ctx, zone)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(result)

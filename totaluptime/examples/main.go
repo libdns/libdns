@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ func main() {
 
 	result, err := provider.GetRecords(ctx, zone)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(PrettyPrint(result))
@@ -58,7 +59,7 @@ func main() {
 
 	result, err = provider.AppendRecords(ctx, zone, recs)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(PrettyPrint(result))
@@ -86,7 +87,7 @@ func main() {
 
 	result, err = provider.SetRecords(ctx, zone, recs)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(PrettyPrint(result))
@@ -122,7 +123,7 @@ func main() {
 
 	result, err = provider.DeleteRecords(ctx, zone, recs)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(PrettyPrint(result))
@@ -133,7 +134,7 @@ func main() {
 
 	result, err = provider.GetRecords(ctx, zone)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
 
 	fmt.Println(PrettyPrint(result))
