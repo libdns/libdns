@@ -154,7 +154,6 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 		// identify record type
 		typeName, err := convertRecordTypeToProvider(rec.Type)
 		if err != nil {
-			log.Printf("Unable to identify record type; skipping: %s: %s\n", rec.Type, rec.Name)
 			continue // skip to next record
 		}
 
@@ -163,7 +162,6 @@ func (p *Provider) AppendRecords(ctx context.Context, zone string, records []lib
 		var buf bytes.Buffer
 		err = json.NewEncoder(&buf).Encode(payload)
 		if err != nil {
-			log.Printf("AppendRecords unable to parse payload; skipping append: %s: %s\n", rec.Type, rec.Name)
 			continue
 		}
 
@@ -207,7 +205,6 @@ func (p *Provider) ModifyRecord(ctx context.Context, zone string, rec libdns.Rec
 	// identify record type
 	typeName, err := convertRecordTypeToProvider(rec.Type)
 	if err != nil {
-		log.Printf("Unable to identify record type; skipping: %s: %s\n", rec.Type, rec.Name)
 		return successRecord, err
 	}
 
@@ -216,7 +213,6 @@ func (p *Provider) ModifyRecord(ctx context.Context, zone string, rec libdns.Rec
 	var buf bytes.Buffer
 	err = json.NewEncoder(&buf).Encode(payload)
 	if err != nil {
-		log.Printf("ModifyRecord unable to parse payload; skipping modify: %s: %s\n", rec.Type, rec.Name)
 		return successRecord, err
 	}
 
@@ -293,13 +289,11 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 		// identify record type
 		typeName, err := convertRecordTypeToProvider(rec.Type)
 		if err != nil {
-			log.Printf("Unable to identify record type; skipping: %s: %s\n", rec.Type, rec.Name)
 			continue // skip to next record
 		}
 
 		recordID := p.getRecordID(domain, rec.Type, rec.Name)
 		if recordID == "" { // record doesn't exist
-			log.Printf("Record not found in zone; skipping delete: %s: %s: %s\n", zone, rec.Type, rec.Name)
 			continue // skip to next record
 		}
 

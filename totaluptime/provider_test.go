@@ -35,9 +35,6 @@ func TestGetRecords(t *testing.T) {
 
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
 	})
 
 	t.Run("missing zone", func(t *testing.T) {
@@ -57,10 +54,7 @@ func TestGetRecords(t *testing.T) {
 		gotString := logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString := "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Domain not found: missingzone.com"
+		wantString := "Domain not found: missingzone.com"
 		AssertStringContains(t, gotString, wantString)
 	})
 }
@@ -135,16 +129,10 @@ func TestAppendRecords(t *testing.T) {
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
-
 		wantString = "DNS successful append record to zone: testdomain.com.: A: test-a-hostname"
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "DNS successful append record to zone: testdomain.com.: CNAME: test-cname-hostname"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Unable to identify record type; skipping: INVALID_TYPE: test-INVALID-domain"
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "DNS successful append record to zone: testdomain.com.: MX: test-MX-domain"
@@ -179,9 +167,6 @@ func TestAppendRecords(t *testing.T) {
 
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
 
 		wantString = "DNS append failure with provider message: Invalid Port."
 		AssertStringContains(t, gotString, wantString)
@@ -254,9 +239,6 @@ func TestModifyRecord(t *testing.T) {
 
 		wantString := "Record not found: testdomain.com/INVALID_TYPE/test-INVALID-domain"
 		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Unable to identify record type; skipping: INVALID_TYPE: test-INVALID-domain"
-		AssertStringContains(t, gotString, wantString)
 	})
 
 	t.Run("failed transaction", func(t *testing.T) {
@@ -281,13 +263,7 @@ func TestModifyRecord(t *testing.T) {
 		gotString := logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString := "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Populate Records cache with live API call for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "DNS modify failure with provider message: Invalid Port."
+		wantString := "DNS modify failure with provider message: Invalid Port."
 		AssertStringContains(t, gotString, wantString)
 	})
 }
@@ -363,15 +339,6 @@ func TestSetRecords(t *testing.T) {
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Lookup DomainIDs from cache"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Populate Records cache with live API call for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
-
 		wantString = "Record not found: testdomain.com/A/test-a-hostname"
 		AssertStringContains(t, gotString, wantString)
 
@@ -385,9 +352,6 @@ func TestSetRecords(t *testing.T) {
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "Record not found: testdomain.com/INVALID_TYPE/test-INVALID-domain"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Unable to identify record type; skipping: INVALID_TYPE: test-INVALID-domain"
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "Record not found: testdomain.com/MX/test-MX-domain"
@@ -474,18 +438,6 @@ func TestSetRecords(t *testing.T) {
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Lookup DomainIDs from cache"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Populate Records cache with live API call for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Lookup RecordIDs from cache for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
-
 		wantString = "DNS successful modify record in zone: testdomain.com.: A: blue-a"
 		AssertStringContains(t, gotString, wantString)
 
@@ -493,9 +445,6 @@ func TestSetRecords(t *testing.T) {
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "Record not found: testdomain.com/INVALID_TYPE/test-INVALID-domain"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Unable to identify record type; skipping: INVALID_TYPE: test-INVALID-domain"
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "DNS successful modify record in zone: testdomain.com.: MX: @"
@@ -531,9 +480,6 @@ func TestSetRecords(t *testing.T) {
 
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
 
 		wantString = "DNS append failure with provider message: Invalid Port."
 		AssertStringContains(t, gotString, wantString)
@@ -632,19 +578,10 @@ func TestDeleteRecords(t *testing.T) {
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Populate Records cache with live API call for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
-
 		wantString = "DNS successful delete record in zone: testdomain.com.: A: blue-a"
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "DNS successful delete record in zone: testdomain.com.: CNAME: green-cname"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Unable to identify record type; skipping: INVALID_TYPE: test-INVALID-domain"
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "DNS successful delete record in zone: testdomain.com.: MX: @"
@@ -681,19 +618,10 @@ func TestDeleteRecords(t *testing.T) {
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
-
 		wantString = "DNS delete record failure with provider message: Invalid Port."
 		AssertStringContains(t, gotString, wantString)
 
-		wantString = "Unable to identify record type; skipping: INVALID_TYPE: test-INVALID-domain"
-		AssertStringContains(t, gotString, wantString)
-
 		wantString = "Record not found: testdomain.com/TXT/extra-txt"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Record not found in zone; skipping delete: testdomain.com.: TXT: extra-txt"
 		AssertStringContains(t, gotString, wantString)
 	})
 

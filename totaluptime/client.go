@@ -73,7 +73,6 @@ func (p *Provider) lookupDomainIDs(forceAPI ...bool) error {
 	// if forceAPI not specified, use cache if it exists
 	if forceAPI == nil {
 		if len(DomainIDs) > 0 {
-			log.Printf("Lookup DomainIDs from cache\n")
 			return nil // use existing cache
 		}
 	}
@@ -82,14 +81,12 @@ func (p *Provider) lookupDomainIDs(forceAPI ...bool) error {
 	if len(forceAPI) > 0 {
 		if !forceAPI[0] { // not true
 			if len(DomainIDs) > 0 {
-				log.Printf("Lookup DomainIDs from cache\n")
 				return nil // use existing cache
 			}
 		}
 	}
 
 	// live API call to retrieve domains
-	log.Printf("Populate DomainIDs cache with live API call\n")
 	DomainIDs = make(map[string]string)
 
 	// configure http request
@@ -353,7 +350,6 @@ func (p *Provider) lookupRecordIDs(domain string, forceAPI ...bool) error {
 	// if forceAPI not specified, use cache if it exists
 	if forceAPI == nil {
 		if _, ok := RecordIDs[domain]; ok { // some records for this domain exist
-			log.Printf("Lookup RecordIDs from cache for domain: %s\n", domain)
 			return nil // use existing cache
 		}
 	}
@@ -362,7 +358,6 @@ func (p *Provider) lookupRecordIDs(domain string, forceAPI ...bool) error {
 	if len(forceAPI) > 0 {
 		if !forceAPI[0] { // not true
 			if _, ok := RecordIDs[domain]; ok { // some records for this domain exist
-				log.Printf("Lookup RecordIDs from cache for domain: %s\n", domain)
 				return nil // use existing cache
 			}
 		}
@@ -375,7 +370,6 @@ func (p *Provider) lookupRecordIDs(domain string, forceAPI ...bool) error {
 	}
 
 	// live API call to retrieve records for specified domain
-	log.Printf("Populate Records cache with live API call for domain: %s\n", domain)
 	RecordIDs = make(map[string]string) // reset cache
 
 	// configure http request

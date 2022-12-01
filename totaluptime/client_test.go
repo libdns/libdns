@@ -13,8 +13,6 @@ func TestLookupDomainIDs(t *testing.T) {
 
 	t.Run("initial request", func(t *testing.T) {
 		DomainIDs = make(map[string]string) // reset cache
-		var logString bytes.Buffer
-		log.SetOutput(&logString)
 
 		gotErr := p.lookupDomainIDs()
 		// fmt.Printf(">>>DEBUG gotErr=%v\n", gotErr)
@@ -28,19 +26,11 @@ func TestLookupDomainIDs(t *testing.T) {
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 		wantString := "map[testdomain.com:test-domain-id]"
 		AssertStrings(t, gotString, wantString)
-
-		gotString = logString.String()
-		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
 	})
 
 	t.Run("use cache if available", func(t *testing.T) {
 		DomainIDs = make(map[string]string) // reset cache
 		DomainIDs["testblue.com"] = "testblue-id-from-the-cache"
-		var logString bytes.Buffer
-		log.SetOutput(&logString)
 
 		gotErr := p.lookupDomainIDs()
 		// fmt.Printf(">>>DEBUG gotErr=%v\n", gotErr)
@@ -54,19 +44,11 @@ func TestLookupDomainIDs(t *testing.T) {
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 		wantString := "map[testblue.com:testblue-id-from-the-cache]"
 		AssertStrings(t, gotString, wantString)
-
-		gotString = logString.String()
-		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Lookup DomainIDs from cache"
-		AssertStringContains(t, gotString, wantString)
 	})
 
 	t.Run("forceAPI explicit false", func(t *testing.T) {
 		DomainIDs = make(map[string]string) // reset cache
 		DomainIDs["testblue.com"] = "testblue-id-from-the-cache"
-		var logString bytes.Buffer
-		log.SetOutput(&logString)
 
 		gotErr := p.lookupDomainIDs(false)
 		// fmt.Printf(">>>DEBUG gotErr=%v\n", gotErr)
@@ -80,12 +62,6 @@ func TestLookupDomainIDs(t *testing.T) {
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 		wantString := "map[testblue.com:testblue-id-from-the-cache]"
 		AssertStrings(t, gotString, wantString)
-
-		gotString = logString.String()
-		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Lookup DomainIDs from cache"
-		AssertStringContains(t, gotString, wantString)
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
@@ -133,10 +109,7 @@ func TestGetDomainID(t *testing.T) {
 		gotString := logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString := "Lookup DomainIDs from cache"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Domain not found: missingdomain.com"
+		wantString := "Domain not found: missingdomain.com"
 		AssertStringContains(t, gotString, wantString)
 	})
 
@@ -180,19 +153,11 @@ func TestLookupRecordIDs(t *testing.T) {
 
 		gotString = logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Populate DomainIDs cache with live API call"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Populate Records cache with live API call for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
 	})
 
 	t.Run("use cache if available", func(t *testing.T) {
 		RecordIDs = make(map[string]string) // reset cache
-		var logString bytes.Buffer
-		log.SetOutput(&logString)
-		RecordIDs[domain] = "populated" // flag item
+		RecordIDs[domain] = "populated"     // flag item
 		RecordIDs[domain+"/A/blue-a"] = "test-a-id-from-the-cache"
 
 		gotErr := p.lookupRecordIDs(domain)
@@ -207,20 +172,12 @@ func TestLookupRecordIDs(t *testing.T) {
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 		wantString := "map[testdomain.com:populated testdomain.com/A/blue-a:test-a-id-from-the-cache]"
 		AssertStrings(t, gotString, wantString)
-
-		gotString = logString.String()
-		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Lookup RecordIDs from cache for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
 	})
 
 	t.Run("forceAPI explicit false", func(t *testing.T) {
 		RecordIDs = make(map[string]string) // reset cache
 		RecordIDs[domain] = "populated"     // flag item
 		RecordIDs[domain+"/A/blue-a"] = "test-a-id-from-the-cache"
-		var logString bytes.Buffer
-		log.SetOutput(&logString)
 
 		gotErr := p.lookupRecordIDs(domain, false)
 		// fmt.Printf(">>>DEBUG gotErr=%v\n", gotErr)
@@ -234,12 +191,6 @@ func TestLookupRecordIDs(t *testing.T) {
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 		wantString := "map[testdomain.com:populated testdomain.com/A/blue-a:test-a-id-from-the-cache]"
 		AssertStrings(t, gotString, wantString)
-
-		gotString = logString.String()
-		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
-
-		wantString = "Lookup RecordIDs from cache for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
@@ -291,10 +242,7 @@ func TestGetRecordID(t *testing.T) {
 		gotString := logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString := "Lookup DomainIDs from cache"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Domain not found: missingdomain.com"
+		wantString := "Domain not found: missingdomain.com"
 		AssertStringContains(t, gotString, wantString)
 
 		wantString = "record lookup cannot proceed: unknown domain: missingdomain.com"
@@ -317,10 +265,7 @@ func TestGetRecordID(t *testing.T) {
 		gotString := logString.String()
 		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 
-		wantString := "Lookup RecordIDs from cache for domain: testdomain.com"
-		AssertStringContains(t, gotString, wantString)
-
-		wantString = "Record not found: testdomain.com/TXT/cant-touch-this"
+		wantString := "Record not found: testdomain.com/TXT/cant-touch-this"
 		AssertStringContains(t, gotString, wantString)
 	})
 
