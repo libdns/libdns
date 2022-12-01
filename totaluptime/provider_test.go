@@ -18,8 +18,6 @@ func TestGetRecords(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		DomainIDs = make(map[string]string) // reset cache
-		var logString bytes.Buffer
-		log.SetOutput(&logString)
 
 		got, err := p.GetRecords(context.TODO(), zone)
 		// fmt.Printf(">>>DEBUG got=%v; err=%v\n", got, err)
@@ -32,9 +30,6 @@ func TestGetRecords(t *testing.T) {
 		gotInt := len(got)
 		wantInt := 5 // records retrieved from mock + flag item
 		AssertInts(t, gotInt, wantInt)
-
-		gotString = logString.String()
-		// fmt.Printf(">>>DEBUG gotString=%v\n", gotString)
 	})
 
 	t.Run("missing zone", func(t *testing.T) {
