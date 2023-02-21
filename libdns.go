@@ -91,6 +91,16 @@ type RecordDeleter interface {
 	DeleteRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
 }
 
+// ZoneLister can list available DNS zones
+type ZoneLister interface {
+	// ListZones returns the list of available DNS zones that can be used
+	// with other libdns interfaces.
+	//
+	// Implementations must honor context cancellation and be safe for
+	// concurrent use.
+	ListZones(ctx context.Context) ([]Zone, error)
+}
+
 // Record is a generalized representation of a DNS record.
 //
 // The values of this struct should be free of zone-file-specific syntax,
@@ -111,6 +121,11 @@ type Record struct {
 	// type-dependent record fields
 	Priority uint // HTTPS, MX, SRV, and URI records
 	Weight   uint // SRV and URI records
+}
+
+// Zone is a generalized representation of a DNS zone.
+type Zone struct {
+	Name string
 }
 
 // ToSRV parses the record into a SRV struct with fully-parsed, literal values.
