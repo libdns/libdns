@@ -91,10 +91,10 @@ type RecordDeleter interface {
 	DeleteRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
 }
 
-// ZoneLister can list available DNS zones
+// ZoneLister can list available DNS zones.
 type ZoneLister interface {
-	// ListZones returns the list of available DNS zones that can be used
-	// with other libdns interfaces.
+	// ListZones returns the list of available DNS zones for use by
+	// other libdns methods.
 	//
 	// Implementations must honor context cancellation and be safe for
 	// concurrent use.
