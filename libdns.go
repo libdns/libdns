@@ -10,15 +10,18 @@
 // that input records conform to this standard, while also ensuring that
 // output records do; adjustments to record names may need to be made before
 // or after provider API calls, for example, to maintain consistency with
-// all other libdns provider implementations. Helper functions are available
-// in this package to convert between relative and absolute names.
+// all other libdns packages. Helper functions are available in this package
+// to convert between relative and absolute names.
 //
 // Although zone names are a required input, libdns does not coerce any
 // particular representation of DNS zones; only records. Since zone name and
 // records are separate inputs in libdns interfaces, it is up to the caller
 // to pair a zone's name with its records in a way that works for them.
 //
-// All interface implementations must be safe for concurrent/parallel use.
+// All interface implementations must be safe for concurrent/parallel use,
+// meaning 1) no data races, and 2) simultaneous method calls must result
+// in either both their expected outcomes or an error.
+//
 // For example, if AppendRecords() is called at the same time and two API
 // requests are made to the provider at the same time, the result of both
 // requests must be visible after they both complete; if the provider does
