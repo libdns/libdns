@@ -137,7 +137,8 @@ func (p *Provider) appendZoneRecord(ctx context.Context, zone string, record lib
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("failed to read response body: %v", err)
+			return libdns.Record{}, err
 		}
 		bodyString := string(bodyBytes)
 		log.Println(bodyString)
@@ -223,7 +224,8 @@ func (p *Provider) setZoneRecord(ctx context.Context, zone string, record libdns
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("failed to read response body: %v", err)
+			return libdns.Record{}, err
 		}
 		bodyString := string(bodyBytes)
 		log.Println(bodyString)
@@ -289,7 +291,8 @@ func (p *Provider) deleteZoneRecord(ctx context.Context, zone string, record lib
 	if resp.StatusCode != http.StatusOK {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Printf("failed to read response body: %v", err)
+			return libdns.Record{}, err
 		}
 		bodyString := string(bodyBytes)
 		log.Println(bodyString)
