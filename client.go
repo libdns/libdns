@@ -80,6 +80,9 @@ func (p *Provider) getZoneRecords(ctx context.Context, zone string) ([]libdns.Re
 }
 
 func (p *Provider) appendZoneRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	reqURL, err := url.Parse(p.ServerURL)
 	if err != nil {
 		return libdns.Record{}, err
@@ -148,6 +151,9 @@ func (p *Provider) appendZoneRecord(ctx context.Context, zone string, record lib
 }
 
 func (p *Provider) setZoneRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	reqURL, err := url.Parse(p.ServerURL)
 	if err != nil {
 		return libdns.Record{}, err
@@ -231,6 +237,9 @@ func (p *Provider) setZoneRecord(ctx context.Context, zone string, record libdns
 }
 
 func (p *Provider) deleteZoneRecord(ctx context.Context, zone string, record libdns.Record) (libdns.Record, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
 	reqURL, err := url.Parse(p.ServerURL)
 	if err != nil {
 		return libdns.Record{}, err
