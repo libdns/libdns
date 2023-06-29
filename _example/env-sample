@@ -1,0 +1,8 @@
+# Copy this file to .env and add your token and key and modify the ZONE 
+# for your domain.
+# See https://cp.easydns.com/manage/security/ to manage Token and Key 
+# information for your account
+EASYDNS_TOKEN=<your token>
+EASYDNS_KEY=<your key>
+EASYDNS_URL=https://sandbox.rest.easydns.net
+EASYDNS_ZONE=yourdomain.com
