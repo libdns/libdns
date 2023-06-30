@@ -1,4 +1,4 @@
-# Copy this file to .env and add your token and key and modify the ZONE 
+# Copy this file to .env; add your token and key; and modify the EASYDNS_ZONE
 # for your domain.
 # See https://cp.easydns.com/manage/security/ to manage Token and Key 
 # information for your account
