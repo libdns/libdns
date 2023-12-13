@@ -50,7 +50,9 @@ newRecs, err := provider.SetRecords(ctx, zone, []libdns.Record{
 
 // delete records (this example uses provider-assigned ID)
 deletedRecs, err := provider.DeleteRecords(ctx, zone, []libdns.Record{
-	ID: "foobar",
+	{
+		ID: "foobar",
+	},
 })
 
 // no matter which provider you use, the code stays the same!
