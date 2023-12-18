@@ -89,3 +89,4 @@ In summary, the goal is that libdns providers can do what the above libraries/to
 How records are represented across providers varies widely, and each kind of record has different fields and semantics. In time, our goal is for the `libdns.Record` type to be able to represent most of them as concisely and simply as possible, with the interface methods able to deliver on most of the possible zone operations.
 
 Realistically, libdns should enable most common record manipulations, but may not be able to fit absolutely 100% of all possibilities with DNS in a provider-agnostic way. That is probably OK; and given the wide varieties in DNS record types and provider APIs, it would be unreasonable to expect otherwise. We are not aiming for 100% fulfillment of 100% of users' requirements; more like 100% fulfillment of ~90% of users' requirements.
+
