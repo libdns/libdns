@@ -56,6 +56,16 @@ func TestRelativeName(t *testing.T) {
 			expect: "foo.bar",
 		},
 		{
+			fqdn:   "foo.bar.example.com",
+			zone:   "example.com.",
+			expect: "foo.bar",
+		},
+		{
+			fqdn:   "foo.bar.example.com.",
+			zone:   "example.com",
+			expect: "foo.bar",
+		},
+		{
 			fqdn:   "example.com",
 			zone:   "example.net",
 			expect: "example.com",

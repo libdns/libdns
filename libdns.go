@@ -199,7 +199,13 @@ func (s SRV) ToRecord() Record {
 //
 // If fqdn cannot be expressed relative to zone, the input fqdn is returned.
 func RelativeName(fqdn, zone string) string {
-	return strings.TrimSuffix(strings.TrimSuffix(fqdn, zone), ".")
+	// liberally ignore trailing dots on both fqdn and zone, because
+	// the relative name won't have a trailing dot anyway; I assume
+	// this won't be problematic...?
+	// (initially implemented because Cloudflare returns "fully-
+	// qualified" domains in their records without a trailing dot,
+	// but the input zone typically has a trailing dot)
+	return strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(fqdn, "."), strings.TrimSuffix(zone, ".")), ".")
 }
 
 // AbsoluteName makes name into a fully-qualified domain name (FQDN) by
