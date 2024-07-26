@@ -1,0 +1,8 @@
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/libdns/libdns v0.2.1 h1:Wu59T7wSHRgtA0cfxC+n1c/e+O3upJGWytknkmFEDis=
+github.com/libdns/libdns v0.2.1/go.mod h1:yQCXzk1lEZmmCPa857bnk4TsOiqYasqpyOEeSObbb40=
+github.com/luadns/luadns-go v0.2.0 h1:bDOfg0qOwzEBsi0ByIRN0nXylDQtDUxRWz5TDwcQ2Vk=
+github.com/luadns/luadns-go v0.2.0/go.mod h1:DmPXbrGMpynq1YNDpvgww3NP5Zf4wXM5raAbGrp5L+8=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
