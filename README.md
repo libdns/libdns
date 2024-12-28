@@ -1,91 +1,85 @@
-libdns - Universal DNS provider APIs for Go
-===========================================
+DNSExit for [`libdns`](https://github.com/libdns/libdns)
+=======================
 
-<a href="https://pkg.go.dev/github.com/libdns/libdns"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"></a>
+[![Go Reference](https://pkg.go.dev/badge/test.svg)](https://pkg.go.dev/github.com/libdns/dnsexit)
 
-**⚠️ Work-in-progress. Exported APIs are subject to change.**
+This package implements the [libdns interfaces](https://github.com/libdns/libdns) for DNSExit, allowing you to manage DNS records.
 
-`libdns` is a collection of free-range DNS provider client implementations written in Go! With libdns packages, your Go program can manage DNS records across any supported providers. A "provider" is a service or program that manages a DNS zone.
+Configuration
+=============
 
-This repository defines the core interfaces that provider packages should implement. They are small and idiomatic Go interfaces with well-defined semantics.
+[DNSExit API documentation](https://dnsexit.com/dns/dns-api/) details the process of getting an API key.
 
-The interfaces include:
+To run clone the `.env_template` to a file named `.env` and populate with the API key and zone. Note that setting the environment variable 'LIBDNS_DNSEXIT_DEBUG=TRUE' will output the request body, which includes the API key.
 
-- [`RecordGetter`](https://pkg.go.dev/github.com/libdns/libdns#RecordGetter) to list records.
-- [`RecordAppender`](https://pkg.go.dev/github.com/libdns/libdns#RecordAppender) to append new records.
-- [`RecordSetter`](https://pkg.go.dev/github.com/libdns/libdns#RecordSetter) to set (create or change existing) records.
-- [`RecordDeleter`](https://pkg.go.dev/github.com/libdns/libdns#RecordDeleter) to delete records.
-
-[See full godoc for detailed documentation.](https://pkg.go.dev/github.com/libdns/libdns)
-
-
-## Example
-
-To work with DNS records managed by Cloudflare, for example, we can use [libdns/cloudflare](https://pkg.go.dev/github.com/libdns/cloudflare):
+Example
+=======
 
 ```go
+package main
+
 import (
-	"github.com/libdns/cloudflare"
+	"context"
+	"fmt"
+	"os"
+
+	"github.com/libdns/dnsexit"
 	"github.com/libdns/libdns"
 )
 
-ctx := context.TODO()
+func main() {
+	key := os.Getenv("LIBDNS_DNSEXIT_API_KEY")
+	if key == "" {
+		fmt.Println("LIBDNS_DNSEXIT_API_KEY not set")
+		return
+	}
 
-zone := "example.com."
+	zone := os.Getenv("LIBDNS_DNSEXIT_ZONE")
+	if zone == "" {
+		fmt.Println("LIBDNS_DNSEXIT_ZONE not set")
+		return
+	}
 
-// configure the DNS provider (choose any from github.com/libdns)
-provider := cloudflare.Provider{APIToken: "topsecret"}
+	p := &dnsexit.Provider{
+		APIKey: key,
+	}
 
-// list records
-recs, err := provider.GetRecords(ctx, zone)
+	records := []libdns.Record{
+		{
+			Type:  "A",
+			Name:  "test",
+			Value: "198.51.100.1",
+		},
+		{
+			Type:  "AAAA",
+			Name:  "test",
+			Value: "2001:0db8::1",
+		},
+		{
+			Type:  "TXT",
+			Name:  "test",
+			Value: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+		},
+	}
 
-// create records (AppendRecords is similar)
-newRecs, err := provider.SetRecords(ctx, zone, []libdns.Record{
-	{
-		Type:  "A",
-		Name:  "sub",
-		Value: "1.2.3.4",
-	},
-})
-
-// delete records (this example uses provider-assigned ID)
-deletedRecs, err := provider.DeleteRecords(ctx, zone, []libdns.Record{
-	{
-		ID: "foobar",
-	},
-})
-
-// no matter which provider you use, the code stays the same!
-// (some providers have caveats; see their package documentation)
+	ctx := context.Background()
+	_, err := p.SetRecords(ctx, zone, records)
+	if err != nil {
+		fmt.Printf("Error: %v", err)
+		return
+	}
+}
 ```
 
+Caveats
+=======
 
-## Implementing new provider packages
+The API does not include a GET method, so fetching records is done via Google DNS. There will be some latency.
 
-Provider packages are 100% written and maintained by the community! Collectively, we all maintain the packages for providers we individually use.
+If an 'A' and 'AAAA' record have the same name, deleting either of them will remove both records.
 
-**[Instructions for adding new libdns packages](https://github.com/libdns/libdns/wiki/Implementing-a-libdns-package)** are on this repo's wiki. Please feel free to contribute yours!
+If multiple record updates are sent in one request, the API may return a code other than 0, to indicate partial success. This is currently judged as a fail and API error message is returned instead of the successfully amended records. 
 
+MX records have mail-zone and mail-server properties, which do not exist in the LibDNS record type, so updating these has not been fully implemented. 'name' can be used instead to specify the mail server, but there is no way to specify the mail-zone. See https://dnsexit.com/dns/dns-api/#example-update-mx
 
-## Similar projects
-
-**[OctoDNS](https://github.com/github/octodns)** is a suite of tools written in Python for managing DNS. However, its approach is a bit heavy-handed when all you need are small, incremental changes to a zone:
-
-> WARNING: OctoDNS assumes ownership of any domain you point it to. When you tell it to act it will do whatever is necessary to try and match up states including deleting any unexpected records. Be careful when playing around with OctoDNS. 
-
-This is incredibly useful when you are maintaining your own zone file, but risky when you just need incremental changes.
-
-**[StackExchange/dnscontrol](https://github.com/StackExchange/dnscontrol)** is written in Go, but is similar to OctoDNS in that it tends to obliterate your entire zone and replace it with your input. Again, this is very useful if you are maintaining your own master list of records, but doesn't do well for simply adding or removing records.
-
-**[go-acme/lego](https://github.com/go-acme/lego)** has support for a huge number of DNS providers (75+!), but their APIs are only capable of setting and deleting TXT records for ACME challenges.
-
-**`libdns`** takes inspiration from the above projects but aims for a more generally-useful set of APIs that homogenize pretty well across providers. In contrast to the above projects, libdns can add, set, delete, and get arbitrary records from a zone without obliterating it (although syncing up an entire zone is also possible!). Its APIs also include context so long-running calls can be cancelled early, for example to accommodate on-line config changes downstream. libdns interfaces are also smaller and more composable. Additionally, libdns can grow to support a nearly infinite number of DNS providers without added bloat, because each provider implementation is a separate Go module, which keeps your builds lean and fast.
-
-In summary, the goal is that libdns providers can do what the above libraries/tools can do, but with more flexibility: they can create and delete TXT records for ACME challenges, they can replace entire zones, but they can also do incremental changes or simply read records.
-
-
-## Record abstraction
-
-How records are represented across providers varies widely, and each kind of record has different fields and semantics. In time, our goal is for the `libdns.Record` type to be able to represent most of them as concisely and simply as possible, with the interface methods able to deliver on most of the possible zone operations.
-
-Realistically, libdns should enable most common record manipulations, but may not be able to fit absolutely 100% of all possibilities with DNS in a provider-agnostic way. That is probably OK; and given the wide varieties in DNS record types and provider APIs, it would be unreasonable to expect otherwise. We are not aiming for 100% fulfillment of 100% of users' requirements; more like 100% fulfillment of ~90% of users' requirements.
+For [Dynamic DNS](https://dnsexit.com/dns/dns-api/#dynamic-ip-update) DNSExit recommend their dedicated GET endpoint, which can set the domain's IP to the one making the request. That is not implemented in this library.
