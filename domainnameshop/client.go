@@ -48,7 +48,6 @@ type DNSRecord struct {
 }
 
 func doRequest(token string, secret string, request *http.Request) ([]byte, error) {
-	//request.Header.Add("Auth-API-Token", token)
 	request.SetBasicAuth(token, secret)
 	client := &http.Client{}
 	response, err := client.Do(request)
