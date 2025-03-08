@@ -18,6 +18,11 @@ import (
 
 const defaultBaseURL string = "https://api.domeneshop.no/v0"
 
+// We set a default ttl that's used if TTL is not specified by other users
+// By default domainname.shop uses 1 hour long TTL which might be too long in a lot of usecases
+// The api specifies that TTL must be in seconds but also in must multiples of 60
+const defaultTtl = time.Duration(2 * time.Minute)
+
 // Domain JSON data structure.
 type Domain struct {
 	Name           string   `json:"domain"`
@@ -186,6 +191,9 @@ func createDNSRecord(ctx context.Context, token string, secret string, zone stri
 		Data: r.Value,
 		TTL:  int(r.TTL.Seconds()),
 	}
+	if reqData.TTL == 0 {
+		reqData.TTL = int(defaultTtl.Seconds())
+	}
 
 	reqBuffer, err := json.Marshal(reqData)
 	if err != nil {
@@ -224,6 +232,9 @@ func updateDNSRecord(ctx context.Context, token string, secret string, zone stri
 		Host: normalizeRecordName(r.Name, zone),
 		Data: r.Value,
 		TTL:  int(r.TTL.Seconds()),
+	}
+	if reqData.TTL == 0 {
+		reqData.TTL = int(defaultTtl.Seconds())
 	}
 
 	reqBuffer, err := json.Marshal(reqData)
