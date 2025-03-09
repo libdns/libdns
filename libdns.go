@@ -1,6 +1,11 @@
 // Package libdns defines core interfaces that should be implemented by DNS
 // provider clients. They are small and idiomatic Go interfaces with
-// well-defined semantics.
+// well-defined semantics for the purposes of reading and manipulating
+// DNS records using DNS provider APIs.
+//
+// This documentation uses the definitions for terms from RFC 7719:
+//
+//	https://datatracker.ietf.org/doc/html/rfc7719
 //
 // Records are described independently of any particular zone, a convention
 // that grants Record structs portability across zones. As such, record names
@@ -45,6 +50,11 @@ import (
 type RecordGetter interface {
 	// GetRecords returns all the records in the DNS zone.
 	//
+	// DNSSEC-related records are typically not included in the output, but
+	// this behavior is implementation-defined. *If* an implementation
+	// includes DNSSEC records in the output, this behavior should be
+	// documented.
+	//
 	// Implementations must honor context cancellation and be safe for
 	// concurrent use.
 	GetRecords(ctx context.Context, zone string) ([]Record, error)
@@ -54,7 +64,8 @@ type RecordGetter interface {
 type RecordAppender interface {
 	// AppendRecords creates the requested records in the given zone
 	// and returns the populated records that were created. It never
-	// changes existing records.
+	// changes existing records. Therefore, it is invalid to use this
+	// method with CNAME-type records.
 	//
 	// Implementations must honor context cancellation and be safe for
 	// concurrent use.
@@ -69,25 +80,77 @@ type RecordSetter interface {
 	// maintain parity with the input. No other records are affected.
 	// It returns the records which were set.
 	//
-	// Records that have an ID associating it with a particular resource
-	// on the provider will be directly replaced. If no ID is given, this
-	// method may use what information is given to do lookups and will
-	// ensure that only necessary changes are made to the zone.
+	// For any (name, type) pair in the input, `SetRecords` ensures that the
+	// only records in the output zone with that (name, type) pair are those
+	// that were provided in the input.
+	//
+	// In RFC 7719 terms, `SetRecords` appends, modifies, or deletes records
+	// in the zone so that for each RRset in the input, the records provided
+	// in the input are the only members of their RRset in the output zone.
+	//
+	// Implementations may decide whether or not to support DNSSEC-related
+	// records in calls to `SetRecords`, but should document their decision.
+	// Note that the decision to support DNSSEC records in `SetRecords` is
+	// independent of the decision to support them in `GetRecords`, so end-users
+	// should not blindly call `SetRecords` on the output of `GetRecords`.
 	//
 	// Implementations must honor context cancellation and be safe for
 	// concurrent use.
+	//
+	// Examples:
+	//
+	// 1. Original zone:
+	//    example.com. 3600 IN A   192.0.2.1
+	//    example.com. 3600 IN A   192.0.2.2
+	//    example.com. 3600 IN TXT "hello world"
+	//
+	//    Input:
+	//    example.com. 3600 IN A   192.0.2.3
+	//
+	//    Resultant zone:
+	//    example.com. 3600 IN A   192.0.2.3
+	//    example.com. 3600 IN TXT "hello world"
+	//
+	// 2. Original zone:
+	//    a.example.com. 3600 IN AAAA 2001:db8::1
+	//    a.example.com. 3600 IN AAAA 2001:db8::2
+	//    b.example.com. 3600 IN AAAA 2001:db8::3
+	//    b.example.com. 3600 IN AAAA 2001:db8::4
+	//
+	//    Input:
+	//    a.example.com. 3600 IN AAAA 2001:db8::1
+	//    a.example.com. 3600 IN AAAA 2001:db8::2
+	//    a.example.com. 3600 IN AAAA 2001:db8::5
+	//
+	//    Resultant zone:
+	//    a.example.com. 3600 IN AAAA 2001:db8::1
+	//    a.example.com. 3600 IN AAAA 2001:db8::2
+	//    a.example.com. 3600 IN AAAA 2001:db8::5
+	//    b.example.com. 3600 IN AAAA 2001:db8::3
+	//    b.example.com. 3600 IN AAAA 2001:db8::4
 	SetRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
 }
 
 // RecordDeleter can delete records from a DNS zone.
 type RecordDeleter interface {
-	// DeleteRecords deletes the given records from the zone if they exist.
-	// It returns the records that were deleted.
+	// `DeleteRecords` deletes the given records from the zone if they exist in
+	// the zone and exactly match the input. If the input records do not exist
+	// in the zone, they are silently ignored. `DeleteRecords` returns only the
+	// the records that were deleted, and does not return any records that were
+	// provided in the input but did not exist in the zone.
 	//
-	// Records that have an ID to associate it with a particular resource on
-	// the provider will be directly deleted. If no ID is given, this method
-	// may use what information is given to do lookups and delete only
-	// matching records.
+	// `DeleteRecords` only deletes records from the zone that *exactly* match
+	// the input records---that is, the name, type, TTL, and value all must be
+	// identical to a record in the zone for it to be deleted.
+	//
+	// As a special case, you may leave any of the fields `Type`, `TTL`, or
+	// `Value` empty ("", 0, and "" respectively). In this case, `DeleteRecords`
+	// will delete any records that match the other fields, regardless of the
+	// value of the fields that were left empty. Note that this behavior does
+	// *not* apply to the `Name` field, which must always be specified.
+	//
+	// Note that it is semantically invalid to remove the last NS record from a
+	// zone, so attempting to do is undefined behavior.
 	//
 	// Implementations must honor context cancellation and be safe for
 	// concurrent use.
@@ -105,26 +168,94 @@ type ZoneLister interface {
 }
 
 // Record is a generalized representation of a DNS record.
-//
-// The values of this struct should be free of zone-file-specific syntax,
-// except if this struct's fields do not sufficiently represent all the
-// fields of a certain record type; in that case, the remaining data for
-// which there are not specific fields should be stored in the Value as
-// it appears in the zone file.
 type Record struct {
 	// provider-specific metadata
 	ID string
 
 	// general record fields
-	Type  string
-	Name  string // partially-qualified (relative to zone)
+
+	// The `Type` field specifies the type of the record. Implementations may
+	// or may not support any given record type, and may support additional
+	// "private" record types with implementation-defined behavior.
+	//
+	// Examples: "A", "AAAA", "CNAME", "MX", "TXT"
+	Type string
+
+	// The `Name` field specifies the name of the record. It is partially
+	// qualified relative to the current zone. This field is called a "Label" by
+	// RFC7719. You may use "@" to represent the root of the zone.
+	//
+	// Examples: "www", "@", "subdomain", "sub.subdomain"
+	//
+	// Invalid: "www.example.com.", "example.net." (fully-qualified)
+	// Invalid: "" (empty)
+	//
+	// Valid, but probably doesn't do what you want: "www.example.com" (for a
+	// zone "example.net.", this refers to "www.example.com.example.net.")
+	Name string
+
+	// The `Value` field specifies the value of the record. This field should
+	// be formatted in the standard zone file syntax, but should omit any fields
+	// that are covered by other fields in this struct.
+	//
+	// Examples: (A)     "192.0.2.1"
+	//           (AAAA)  "2001:db8::1"
+	//           (CNAME) "example.com." (Even though the value is traditionally
+	//                   called the "target", it is included only in the `Value`
+	//                   field here.)
+	//           (MX)    "mail.example.com." (Note that this excludes the
+	//                   priority field!)
+	//	         (TXT)   "Hello, world!"
+	//	         (SRV)   "8080 example.com." (Note that this excludes the
+	//                   priority and weight fields, but includes the port.
+	//                   Also note that the target is included here, and not
+	//                   in the `Target` field.)
+	//	         (HTTPS) "alpn=h2,h3 port=443" (Note that this excludes the
+	//                   priority field and target fields.)
 	Value string
-	TTL   time.Duration
+
+	// The `TTL` field specifies the time-to-live of the record. This is
+	// represented in the DNS as an unsigned integral number of seconds, but is
+	// provided here as a time.Duration. Fractions of seconds will be rounded
+	// down (aka truncated). A value of `0` means that the record should not be
+	// cached.
+	//
+	// Note that some providers may reject or silently increase TTLs that are
+	// below a certain threshold, and that DNS resolvers may choose to ignore
+	// your TTL settings, so it is recommended to not rely on the exact TTL
+	// value.
+	TTL time.Duration
 
 	// common, type-dependent record fields
-	Priority uint   // HTTPS, MX, SRV, and URI records
-	Weight   uint   // SRV and URI records
-	Target   string // HTTPS records
+
+	// The `Priority` field specifies the priority of the record. This field is
+	// only applicable for certain record types, but is mandatory for those
+	// types.
+	//
+	// Examples: (MX)    10 (Note that this is traditionally called the
+	//                   "preference" in the DNS)
+	//           (SRV)   10
+	//           (URI)   10
+	//           (HTTPS) 10
+	//           (SVCB)  10
+	Priority uint
+
+	// The `Weight` field specifies the weight of the record. This field is
+	// only applicable for certain record types, but is mandatory for those
+	// types.
+	//
+	// Examples: (SRV) 20
+	//           (URI) 20
+	Weight uint
+
+	// The `Target` field specifies the target of the record. This field is
+	// only valid for HTTPS and SVCB records, and *not* for SRV, MX, or CNAME
+	// records, which store their targets in the `Value` field. This field must
+	// be set to the fully-qualified domain name (FQDN) of the target.
+	//
+	// Examples: (HTTPS) "example.com."
+	//           (SVCB)  "example.com."
+	Target string
 }
 
 // Zone is a generalized representation of a DNS zone.
@@ -218,6 +349,10 @@ func RelativeName(fqdn, zone string) string {
 // AbsoluteName makes name into a fully-qualified domain name (FQDN) by
 // prepending it to zone and tidying up the dots. For example, an input
 // of name "sub" and zone "example.com." will return "sub.example.com.".
+//
+// Using `"@"` as the name is the recommended way to represent the root of the
+// zone; however, unlike the `Record` struct, using the empty string `""` for
+// the name _is_ permitted here, and will be identically to `"@"`.
 func AbsoluteName(name, zone string) string {
 	if zone == "" {
 		return strings.Trim(name, ".")
