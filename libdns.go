@@ -196,7 +196,9 @@ func (s SRV) ToRecord() Record {
 }
 
 // RelativeName makes fqdn relative to zone. For example, for a FQDN of
-// "sub.example.com" and a zone of "example.com", it outputs "sub".
+// "sub.example.com" and a zone of "example.com", it returns "sub".
+//
+// If fqdn is the same as zone (and both are non-empty), "@" is returned.
 //
 // If fqdn cannot be expressed relative to zone, the input fqdn is returned.
 func RelativeName(fqdn, zone string) string {
@@ -206,7 +208,11 @@ func RelativeName(fqdn, zone string) string {
 	// (initially implemented because Cloudflare returns "fully-
 	// qualified" domains in their records without a trailing dot,
 	// but the input zone typically has a trailing dot)
-	return strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(fqdn, "."), strings.TrimSuffix(zone, ".")), ".")
+	rel := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(fqdn, "."), strings.TrimSuffix(zone, ".")), ".")
+	if rel == "" && fqdn != "" && zone != "" {
+		return "@"
+	}
+	return rel
 }
 
 // AbsoluteName makes name into a fully-qualified domain name (FQDN) by
