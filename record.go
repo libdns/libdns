@@ -13,12 +13,13 @@ type Record interface {
 	RR() (RR, error)
 }
 
-// RR represents a DNS Resource Record, which resembles how records are
-// represented by DNS servers in zone files (see
-// https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records).
+// RR represents a [DNS Resource Record], which resembles how records are
+// represented by DNS servers in zone files.
 //
 // The fields in this struct are common to all RRs, with the data field
 // being opaque; it has no particular meaning until it is parsed.
+//
+// [DNS Resource Record]: https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records
 type RR struct {
 	// The name of the record. It is partially qualified, relative to the zone.
 	// For the sake of consistency, use "@" to represent the root of the zone.
