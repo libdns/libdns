@@ -6,39 +6,32 @@ import (
 	"time"
 )
 
-// A represents a parsed A-type record, which associates
-// a name with an IPv4 address. This is typically how
-// to "point a domain to your server" (with IPv4).
-type A struct {
+// Address represents a parsed A-type or AAAA-type record,
+// which associates a name with an IPv4 or IPv6 address
+// respectively. This is typically how to "point a domain
+// to your server."
+//
+// Since A and AAAA are semantically identical, with the
+// exception of the bit length of the IP address in the
+// data field, these record types are combined for ease of
+// use in Go programs, which supports both address sizes,
+// to help simplify code.
+type Address struct {
 	Name string
 	TTL  time.Duration
 	IP   netip.Addr
 }
 
-func (a A) RR() (RR, error) {
+func (a Address) RR() (RR, error) {
+	recType := "A"
+	if a.IP.Is6() {
+		recType = "AAAA"
+	}
 	return RR{
 		Name: a.Name,
 		TTL:  a.TTL,
-		Type: "A",
+		Type: recType,
 		Data: a.IP.String(),
-	}, nil
-}
-
-// AAAA represents a parsed AAAA-type record, which associates
-// a name with an IPv6 address. This is typically how
-// to "point a domain to your server" (with IPv6).
-type AAAA struct {
-	Name string
-	TTL  time.Duration
-	IP   netip.Addr
-}
-
-func (aaaa AAAA) RR() (RR, error) {
-	return RR{
-		Name: aaaa.Name,
-		TTL:  aaaa.TTL,
-		Type: "AAAA",
-		Data: aaaa.IP.String(),
 	}, nil
 }
 

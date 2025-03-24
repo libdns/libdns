@@ -64,8 +64,9 @@ type RR struct {
 	Type string
 
 	// The data (or "value") of the record. This field should be formatted in the
-	// standard zone file syntax (technically, the "RDATA" field as defined by
-	// RFC 1034).
+	// *unescaped* standard zone file syntax (technically, the "RDATA" field as
+	// defined by RFC 1035 §5.1). Due to variances in escape sequences and provider
+	// support, this field should not contain escapes.
 	Data string
 }
 
@@ -80,10 +81,8 @@ func (r RR) RR() (RR, error) { return r, nil }
 // the return value to extract values or manipulate it.
 func (r RR) Parse() (Record, error) {
 	switch r.Type {
-	case "A":
-		return r.toA()
-	case "AAAA":
-		return r.toAAAA()
+	case "A", "AAAA":
+		return r.toAddress()
 	case "CNAME":
 		return r.toCNAME()
 	case "HTTPS":
@@ -97,40 +96,17 @@ func (r RR) Parse() (Record, error) {
 	}
 }
 
-func (r RR) toA() (A, error) {
-	if expectedType := "A"; r.Type != expectedType {
-		return A{}, fmt.Errorf("record type not %s: %s", expectedType, r.Type)
+func (r RR) toAddress() (Address, error) {
+	if r.Type != "A" && r.Type != "AAAA" {
+		return Address{}, fmt.Errorf("record type not A or AAAA: %s", r.Type)
 	}
 
 	ip, err := netip.ParseAddr(r.Data)
 	if err != nil {
-		return A{}, fmt.Errorf("invalid IP address %q: %v", r.Data, err)
-	}
-	if !ip.Is4() {
-		return A{}, fmt.Errorf("value is not IPv4: %s (parsed=%s, bitlen=%d)", r.Data, ip, ip.BitLen())
+		return Address{}, fmt.Errorf("invalid IP address %q: %v", r.Data, err)
 	}
 
-	return A{
-		Name: r.Name,
-		IP:   ip,
-		TTL:  r.TTL,
-	}, nil
-}
-
-func (r RR) toAAAA() (AAAA, error) {
-	if expectedType := "AAAA"; r.Type != expectedType {
-		return AAAA{}, fmt.Errorf("record type not %s: %s", expectedType, r.Type)
-	}
-
-	ip, err := netip.ParseAddr(r.Data)
-	if err != nil {
-		return AAAA{}, fmt.Errorf("invalid IP address %q: %v", r.Data, err)
-	}
-	if !ip.Is6() {
-		return AAAA{}, fmt.Errorf("value is not IPv6: %s (parsed=%s, bitlen=%d)", r.Data, ip, ip.BitLen())
-	}
-
-	return AAAA{
+	return Address{
 		Name: r.Name,
 		IP:   ip,
 		TTL:  r.TTL,
@@ -154,8 +130,8 @@ func (r RR) toHTTPS() (HTTPS, error) {
 	}
 
 	parts := strings.SplitN(r.Data, " ", 3)
-	if expectedLen := 3; len(parts) != expectedLen {
-		return HTTPS{}, fmt.Errorf("malformed HTTPS value; expected %d fields in the form 'priority target SvcParams'", expectedLen)
+	if minParts := 2; len(parts) < minParts { // SvcParams can be empty
+		return HTTPS{}, fmt.Errorf("malformed HTTPS value; expected at least %d fields in the form 'priority target [SvcParams]'", minParts)
 	}
 
 	priority, err := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 16)
@@ -277,12 +253,17 @@ func (params SvcParams) String() string {
 
 // ParseSvcParams parses a SvcParams string described by RFC 9460 into a structured type.
 func ParseSvcParams(input string) (SvcParams, error) {
+	input = strings.TrimSpace(input)
 	if len(input) > 4096 {
 		return nil, fmt.Errorf("input too long: %d", len(input))
 	}
-
 	params := make(SvcParams)
-	input = strings.TrimSpace(input) + " "
+	if len(input) == 0 {
+		return params, nil
+	}
+
+	// adding a space makes it easier to find the end of last key-value pair
+	input += " "
 
 	for cursor := 0; cursor < len(input); cursor++ {
 		var key, rawVal string

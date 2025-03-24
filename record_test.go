@@ -7,10 +7,10 @@ import (
 	"time"
 )
 
-func TestToA(t *testing.T) {
+func TestToAddress(t *testing.T) {
 	for i, test := range []struct {
 		input     RR
-		expect    A
+		expect    Address
 		shouldErr bool
 	}{
 		{
@@ -20,32 +20,12 @@ func TestToA(t *testing.T) {
 				Type: "A",
 				Data: "1.2.3.4",
 			},
-			expect: A{
+			expect: Address{
 				Name: "sub",
 				TTL:  5 * time.Minute,
 				IP:   netip.MustParseAddr("1.2.3.4"),
 			},
 		},
-	} {
-		actual, err := test.input.toA()
-		if err == nil && test.shouldErr {
-			t.Errorf("Test %d: Expected error, got none", i)
-		}
-		if err != nil && !test.shouldErr {
-			t.Errorf("Test %d: Expected no error, but got: %v", i, err)
-		}
-		if !reflect.DeepEqual(actual, test.expect) {
-			t.Errorf("Test %d: INPUT=%#v\nEXPECTED: %#v\nACTUAL:   %#v", i, test.input, test.expect, actual)
-		}
-	}
-}
-
-func TestToAAAA(t *testing.T) {
-	for i, test := range []struct {
-		input     RR
-		expect    AAAA
-		shouldErr bool
-	}{
 		{
 			input: RR{
 				Name: "@",
@@ -53,14 +33,14 @@ func TestToAAAA(t *testing.T) {
 				Type: "AAAA",
 				Data: "2001:db8:3c4d:15:0:d234:3eee::",
 			},
-			expect: AAAA{
+			expect: Address{
 				Name: "@",
 				TTL:  5 * time.Minute,
 				IP:   netip.MustParseAddr("2001:db8:3c4d:15:0:d234:3eee::"),
 			},
 		},
 	} {
-		actual, err := test.input.toAAAA()
+		actual, err := test.input.toAddress()
 		if err == nil && test.shouldErr {
 			t.Errorf("Test %d: Expected error, got none", i)
 		}
@@ -222,6 +202,10 @@ func TestParseSvcParams(t *testing.T) {
 		shouldErr bool
 	}{
 		{
+			input:  "",
+			expect: SvcParams{},
+		},
+		{
 			input: `alpn="h2,h3" no-default-alpn ipv6hint=2001:db8::1 port=443`,
 			expect: SvcParams{
 				"alpn":            {"h2", "h3"},
@@ -286,14 +270,13 @@ func TestSvcParamsString(t *testing.T) {
 	// because we can't just compare string outputs
 	// since map iteration is unordered
 	for i, test := range []SvcParams{
-
+		{},
 		{
 			"alpn":            {"h2", "h3"},
 			"no-default-alpn": {},
 			"ipv6hint":        {"2001:db8::1"},
 			"port":            {"443"},
 		},
-
 		{
 			"key":    {"value"},
 			"quoted": {"some string"},

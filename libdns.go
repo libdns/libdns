@@ -15,7 +15,7 @@
 //
 // This package represents records flexibly with the [Record] interface, which
 // is any type that can transform itself into the [RR] struct, which is a
-// type-agnostic [Resource Record](https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records)
+// type-agnostic [Resource Record].
 // (that is, a name, type, class, TTL, and data). Specific record types such as
 // [A], [AAAA], [SRV], [HTTPS], and others implement the [Record] interface.
 //
@@ -47,6 +47,8 @@
 // synchronization might only need to be within the same zone, allowing multiple
 // requests at once as long as all of them are for different zone. (Exact logic
 // depends on the provider.)
+//
+// [Resource Record]: https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records
 package libdns
 
 import (
