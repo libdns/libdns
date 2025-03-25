@@ -53,7 +53,7 @@ func (c CAA) RR() (RR, error) {
 		Name: c.Name,
 		TTL:  c.TTL,
 		Type: "CAA",
-		Data: fmt.Sprintf(`%d %s "%q"`, c.Flags, c.Tag, c.Value),
+		Data: fmt.Sprintf(`%d %s %q`, c.Flags, c.Tag, c.Value),
 	}, nil
 }
 
