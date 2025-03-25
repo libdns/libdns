@@ -48,9 +48,12 @@
 // requests at once as long as all of them are for different zone. (Exact logic
 // depends on the provider.)
 //
-// Some provider APIs may have rate limits on the number of requests per second,
-// so [libdns] interface implementations should either transparently queue
-// requests, retry failed requests after a delay, or some combination of both.
+// Some service providers APIs may enforce rate limits or have sporadic errors.
+// It is generally expected that libdns provider packages implement basic retry
+// logic (e.g. retry up to 3-5 times with backoff in the event of a connection error
+// or some HTTP error that may be recoverable, including 5xx or 429s) when it is
+// safe to do so. Retrying/recovering from errors should not add substantial latency,
+// though. If it will take longer than a couple seconds, best to return an error.
 //
 // [Resource Record]: https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records
 package libdns
