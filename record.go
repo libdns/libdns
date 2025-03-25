@@ -83,10 +83,16 @@ func (r RR) Parse() (Record, error) {
 	switch r.Type {
 	case "A", "AAAA":
 		return r.toAddress()
+	case "CAA":
+		return r.toCAA()
 	case "CNAME":
 		return r.toCNAME()
 	case "HTTPS":
 		return r.toHTTPS()
+	case "MX":
+		return r.toMX()
+	case "NS":
+		return r.toNS()
 	case "SRV":
 		return r.toSRV()
 	case "TXT":
@@ -110,6 +116,32 @@ func (r RR) toAddress() (Address, error) {
 		Name: r.Name,
 		IP:   ip,
 		TTL:  r.TTL,
+	}, nil
+}
+
+func (r RR) toCAA() (CAA, error) {
+	if expectedType := "CAA"; r.Type != expectedType {
+		return CAA{}, fmt.Errorf("record type not %s: %s", expectedType, r.Type)
+	}
+
+	fields := strings.Fields(r.Data)
+	if expectedLen := 3; len(fields) != expectedLen {
+		return CAA{}, fmt.Errorf(`malformed CAA value; expected %d fields in the form 'flags tag "value"'`, expectedLen)
+	}
+
+	flags, err := strconv.ParseUint(fields[0], 10, 8)
+	if err != nil {
+		return CAA{}, fmt.Errorf("invalid flags %s: %v", fields[0], err)
+	}
+	tag := fields[1]
+	value := strings.Trim(fields[2], `"`)
+
+	return CAA{
+		Name:  r.Name,
+		TTL:   r.TTL,
+		Flags: uint8(flags),
+		Tag:   tag,
+		Value: value,
 	}, nil
 }
 
@@ -151,6 +183,41 @@ func (r RR) toHTTPS() (HTTPS, error) {
 		Priority: uint16(priority),
 		Target:   target,
 		Value:    svcParams,
+	}, nil
+}
+
+func (r RR) toMX() (MX, error) {
+	if expectedType := "MX"; r.Type != expectedType {
+		return MX{}, fmt.Errorf("record type not %s: %s", expectedType, r.Type)
+	}
+
+	fields := strings.Fields(r.Data)
+	if expectedLen := 2; len(fields) != expectedLen {
+		return MX{}, fmt.Errorf("malformed MX value; expected %d fields in the form 'preference target'", expectedLen)
+	}
+
+	priority, err := strconv.ParseUint(fields[0], 10, 16)
+	if err != nil {
+		return MX{}, fmt.Errorf("invalid priority %s: %v", fields[0], err)
+	}
+	target := fields[1]
+
+	return MX{
+		Name:       r.Name,
+		TTL:        r.TTL,
+		Preference: uint16(priority),
+		Target:     target,
+	}, nil
+}
+
+func (r RR) toNS() (NS, error) {
+	if expectedType := "NS"; r.Type != expectedType {
+		return NS{}, fmt.Errorf("record type not %s: %s", expectedType, r.Type)
+	}
+	return NS{
+		Name:   r.Name,
+		TTL:    r.TTL,
+		Target: r.Data,
 	}, nil
 }
 

@@ -35,6 +35,28 @@ func (a Address) RR() (RR, error) {
 	}, nil
 }
 
+// CAA represents a parsed CAA-type record, which is used to specify which PKIX
+// certificate authorities are allowed to issue certificates for a domain. See
+// also the [registry of flags and tags].
+//
+// [registry of flags and tags]: https://www.iana.org/assignments/caa-parameters/caa-parameters.xhtml
+type CAA struct {
+	Name  string
+	TTL   time.Duration
+	Flags uint8 // As of March 2025, the only valid values are 0 and 128.
+	Tag   string
+	Value string
+}
+
+func (c CAA) RR() (RR, error) {
+	return RR{
+		Name: c.Name,
+		TTL:  c.TTL,
+		Type: "CAA",
+		Data: fmt.Sprintf(`%d %s "%q"`, c.Flags, c.Tag, c.Value),
+	}, nil
+}
+
 // CNAME represents a CNAME-type record, which delegates
 // authority to other names.
 type CNAME struct {
@@ -73,6 +95,51 @@ func (h HTTPS) RR() (RR, error) {
 		TTL:  h.TTL,
 		Type: "HTTPS",
 		Data: fmt.Sprintf("%d %s %s", h.Priority, h.Target, h.Value),
+	}, nil
+}
+
+// MX represents a parsed MX-type record, which is used to specify the hostnames
+// of the servers that accept mail for a domain.
+type MX struct {
+	Name       string
+	TTL        time.Duration
+	Preference uint16 // Lower values indicate that clients should prefer this server
+	Target     string // The hostname of the mail server
+}
+
+func (m MX) RR() (RR, error) {
+	return RR{
+		Name: m.Name,
+		TTL:  m.TTL,
+		Type: "MX",
+		Data: fmt.Sprintf("%d %s", m.Preference, m.Target),
+	}, nil
+}
+
+// NS represents a parsed NS-type record, which is used to specify the
+// authoritative nameservers for a zone. It is strongly recommended to have at
+// least two NS records for redundancy.
+//
+// Note that the NS records present at the root level of a zone must match those
+// delegated to by the parent zone. This means that changing the NS records for
+// the root of a registered domain won't have any effect unless you also update
+// the NS records with the domain registrar.
+//
+// Also note that the DNS standards forbid removing the last NS record for a
+// zone, so if you want to replace all NS records, you should add the new ones
+// before removing the old ones.
+type NS struct {
+	Name   string
+	TTL    time.Duration
+	Target string
+}
+
+func (n NS) RR() (RR, error) {
+	return RR{
+		Name: n.Name,
+		TTL:  n.TTL,
+		Type: "NS",
+		Data: n.Target,
 	}, nil
 }
 
