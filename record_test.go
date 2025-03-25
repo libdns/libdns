@@ -53,6 +53,41 @@ func TestToAddress(t *testing.T) {
 	}
 }
 
+func TestToCAA(t *testing.T) {
+	for i, test := range []struct {
+		input     RR
+		expect    CAA
+		shouldErr bool
+	}{
+		{
+			input: RR{
+				Name: "@",
+				TTL:  5 * time.Minute,
+				Type: "CAA",
+				Data: `128 issue "letsencrypt.org"`,
+			},
+			expect: CAA{
+				Name:  "@",
+				TTL:   5 * time.Minute,
+				Flags: 128,
+				Tag:   "issue",
+				Value: "letsencrypt.org",
+			},
+		},
+	} {
+		actual, err := test.input.toCAA()
+		if err == nil && test.shouldErr {
+			t.Errorf("Test %d: Expected error, got none", i)
+		}
+		if err != nil && !test.shouldErr {
+			t.Errorf("Test %d: Expected no error, but got: %v", i, err)
+		}
+		if !reflect.DeepEqual(actual, test.expect) {
+			t.Errorf("Test %d: INPUT=%#v\nEXPECTED: %#v\nACTUAL:   %#v", i, test.input, test.expect, actual)
+		}
+	}
+}
+
 func TestToCNAME(t *testing.T) {
 	for i, test := range []struct {
 		input     RR
@@ -120,6 +155,73 @@ func TestToHTTPS(t *testing.T) {
 		}
 		if !reflect.DeepEqual(actual, test.expect) {
 			t.Errorf("Test %d: INPUT=%#v\nEXPECTED: %+v\nACTUAL:   %+v", i, test.input, test.expect, actual)
+		}
+	}
+}
+
+func TestToMX(t *testing.T) {
+	for i, test := range []struct {
+		input     RR
+		expect    MX
+		shouldErr bool
+	}{
+		{
+			input: RR{
+				Name: "@",
+				TTL:  5 * time.Minute,
+				Type: "MX",
+				Data: "10 example.com.",
+			},
+			expect: MX{
+				Name:       "@",
+				TTL:        5 * time.Minute,
+				Preference: 10,
+				Target:     "example.com.",
+			},
+		},
+	} {
+		actual, err := test.input.toMX()
+		if err == nil && test.shouldErr {
+			t.Errorf("Test %d: Expected error, got none", i)
+		}
+		if err != nil && !test.shouldErr {
+			t.Errorf("Test %d: Expected no error, but got: %v", i, err)
+		}
+		if !reflect.DeepEqual(actual, test.expect) {
+			t.Errorf("Test %d: INPUT=%#v\nEXPECTED: %#v\nACTUAL:   %#v", i, test.input, test.expect, actual)
+		}
+	}
+}
+
+func TestToNS(t *testing.T) {
+	for i, test := range []struct {
+		input     RR
+		expect    NS
+		shouldErr bool
+	}{
+		{
+			input: RR{
+				Name: "@",
+				TTL:  5 * time.Minute,
+				Type: "NS",
+				Data: "example.com.",
+			},
+			expect: NS{
+				Name:   "@",
+				TTL:    5 * time.Minute,
+				Target: "example.com.",
+			},
+		},
+	} {
+		actual, err := test.input.toNS()
+		if err == nil && test.shouldErr {
+			t.Errorf("Test %d: Expected error, got none", i)
+		}
+		if err != nil && !test.shouldErr {
+			t.Errorf("Test %d: Expected no error, but got: %v", i, err)
+		}
+		if !reflect.DeepEqual(actual, test.expect) {
+			t.Errorf("Test %d: INPUT=%#v\nEXPECTED: %#v\nACTUAL:   %#v", i, test.input, test.expect, actual)
 		}
 	}
 }
