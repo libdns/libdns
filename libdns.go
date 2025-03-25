@@ -48,6 +48,10 @@
 // requests at once as long as all of them are for different zone. (Exact logic
 // depends on the provider.)
 //
+// Some provider APIs may have rate limits on the number of requests per second,
+// so [libdns] interface implementations should either transparently queue
+// requests, retry failed requests after a delay, or some combination of both.
+//
 // [Resource Record]: https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records
 package libdns
 
@@ -101,6 +105,15 @@ type RecordSetter interface {
 	// decision to support them in [libdns.RecordGetter.GetRecords], so callers
 	// should not blindly call SetRecords with the output of
 	// [libdns.RecordGetter.GetRecords].
+	//
+	// Calls to SetRecords are presumed to be atomic; that is, if err == nil,
+	// then all of the requested changes were made; if err != nil, then none of
+	// the requested changes were made, and the zone is as if the method was
+	// never called. Some provider APIs may not support atomic operations, so it
+	// is recommended that implementations synthesize atomicity by transparently
+	// rolling back changes on failure; if this is not possible, then it should
+	// be clearly documented that errors may result in partial changes to the
+	// zone.
 	//
 	// Implementations must honor context cancellation and be safe for concurrent
 	// use.
