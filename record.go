@@ -10,7 +10,7 @@ import (
 
 // Record is any type that can reduce itself to the [RR] struct.
 type Record interface {
-	RR() (RR, error)
+	RR() RR
 }
 
 // RR represents a [DNS Resource Record], which resembles how records are
@@ -72,7 +72,7 @@ type RR struct {
 
 // RR returns itself. This may be the case when trying to parse an RR type
 // that is not (yet) supported/implemented by this package.
-func (r RR) RR() (RR, error) { return r, nil }
+func (r RR) RR() RR { return r }
 
 // Parse returns a type-specific structure for this RR, if it is
 // a known/supported type. Otherwise, it returns itself.

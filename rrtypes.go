@@ -22,7 +22,7 @@ type Address struct {
 	IP   netip.Addr
 }
 
-func (a Address) RR() (RR, error) {
+func (a Address) RR() RR {
 	recType := "A"
 	if a.IP.Is6() {
 		recType = "AAAA"
@@ -32,7 +32,7 @@ func (a Address) RR() (RR, error) {
 		TTL:  a.TTL,
 		Type: recType,
 		Data: a.IP.String(),
-	}, nil
+	}
 }
 
 // CAA represents a parsed CAA-type record, which is used to specify which PKIX
@@ -48,13 +48,13 @@ type CAA struct {
 	Value string
 }
 
-func (c CAA) RR() (RR, error) {
+func (c CAA) RR() RR {
 	return RR{
 		Name: c.Name,
 		TTL:  c.TTL,
 		Type: "CAA",
 		Data: fmt.Sprintf(`%d %s %q`, c.Flags, c.Tag, c.Value),
-	}, nil
+	}
 }
 
 // CNAME represents a CNAME-type record, which delegates
@@ -65,13 +65,13 @@ type CNAME struct {
 	Target string
 }
 
-func (c CNAME) RR() (RR, error) {
+func (c CNAME) RR() RR {
 	return RR{
 		Name: c.Name,
 		TTL:  c.TTL,
 		Type: "CNAME",
 		Data: c.Target,
-	}, nil
+	}
 }
 
 // HTTPS represents a parsed HTTPS-type record, which is used
@@ -89,13 +89,13 @@ type HTTPS struct {
 // RR converts the parsed record data to a generic [Record] struct.
 //
 // EXPERIMENTAL; subject to change or removal.
-func (h HTTPS) RR() (RR, error) {
+func (h HTTPS) RR() RR {
 	return RR{
 		Name: h.Name,
 		TTL:  h.TTL,
 		Type: "HTTPS",
 		Data: fmt.Sprintf("%d %s %s", h.Priority, h.Target, h.Value),
-	}, nil
+	}
 }
 
 // MX represents a parsed MX-type record, which is used to specify the hostnames
@@ -107,13 +107,13 @@ type MX struct {
 	Target     string // The hostname of the mail server
 }
 
-func (m MX) RR() (RR, error) {
+func (m MX) RR() RR {
 	return RR{
 		Name: m.Name,
 		TTL:  m.TTL,
 		Type: "MX",
 		Data: fmt.Sprintf("%d %s", m.Preference, m.Target),
-	}, nil
+	}
 }
 
 // NS represents a parsed NS-type record, which is used to specify the
@@ -134,13 +134,13 @@ type NS struct {
 	Target string
 }
 
-func (n NS) RR() (RR, error) {
+func (n NS) RR() RR {
 	return RR{
 		Name: n.Name,
 		TTL:  n.TTL,
 		Type: "NS",
 		Data: n.Target,
-	}, nil
+	}
 }
 
 // SRV represents a parsed SRV-type record, which is used to
@@ -161,13 +161,13 @@ type SRV struct {
 	Target   string
 }
 
-func (s SRV) RR() (RR, error) {
+func (s SRV) RR() RR {
 	return RR{
 		Name: fmt.Sprintf("_%s._%s.%s", s.Service, s.Proto, s.Name),
 		TTL:  s.TTL,
 		Type: "SRV",
 		Data: fmt.Sprintf("%d %d %d %s", s.Priority, s.Weight, s.Port, s.Target),
-	}, nil
+	}
 }
 
 // TXT represents a parsed TXT-type record, which is used to
@@ -180,11 +180,11 @@ type TXT struct {
 	Text string
 }
 
-func (t TXT) RR() (RR, error) {
+func (t TXT) RR() RR {
 	return RR{
 		Name: t.Name,
 		TTL:  t.TTL,
 		Type: "TXT",
 		Data: t.Text,
-	}, nil
+	}
 }
