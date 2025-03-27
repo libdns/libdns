@@ -124,7 +124,7 @@ func TestToCNAME(t *testing.T) {
 func TestToHTTPS(t *testing.T) {
 	for i, test := range []struct {
 		input     RR
-		expect    HTTPS
+		expect    SVCB
 		shouldErr bool
 	}{
 		{
@@ -134,19 +134,19 @@ func TestToHTTPS(t *testing.T) {
 				Type: "HTTPS",
 				Data: `1 . key=value1,value2 ech="foobar"`,
 			},
-			expect: HTTPS{
+			expect: SVCB{
 				Name:     "@",
 				TTL:      5 * time.Minute,
 				Priority: 1,
 				Target:   ".",
-				Value: SvcParams{
+				Params: &SvcParams{
 					"key": []string{"value1", "value2"},
 					"ech": []string{"foobar"},
 				},
 			},
 		},
 	} {
-		actual, err := test.input.toHTTPS()
+		actual, err := test.input.toSVCB()
 		if err == nil && test.shouldErr {
 			t.Errorf("Test %d: Expected error, got none", i)
 		}
@@ -173,10 +173,10 @@ func TestToMX(t *testing.T) {
 				Data: "10 example.com.",
 			},
 			expect: MX{
-				Name:       "@",
-				TTL:        5 * time.Minute,
-				Preference: 10,
-				Target:     "example.com.",
+				Name:     "@",
+				TTL:      5 * time.Minute,
+				Priority: 10,
+				Target:   "example.com.",
 			},
 		},
 	} {
@@ -240,14 +240,14 @@ func TestToSRV(t *testing.T) {
 				Data: "1 2 1234 example.com",
 			},
 			expect: SRV{
-				Service:  "service",
-				Proto:    "proto",
-				Name:     "name",
-				TTL:      5 * time.Minute,
-				Priority: 1,
-				Weight:   2,
-				Port:     1234,
-				Target:   "example.com",
+				Service:   "service",
+				Transport: "proto",
+				Name:      "name",
+				TTL:       5 * time.Minute,
+				Priority:  1,
+				Weight:    2,
+				Port:      1234,
+				Target:    "example.com",
 			},
 		},
 	} {

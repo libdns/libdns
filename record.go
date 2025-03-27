@@ -106,8 +106,8 @@ func (r RR) Parse() (Record, error) {
 		return r.toCAA()
 	case "CNAME":
 		return r.toCNAME()
-	case "HTTPS":
-		return r.toHTTPS()
+	case "HTTPS", "SVCB":
+		return r.toSVCB()
 	case "MX":
 		return r.toMX()
 	case "NS":
@@ -175,36 +175,6 @@ func (r RR) toCNAME() (CNAME, error) {
 	}, nil
 }
 
-func (r RR) toHTTPS() (HTTPS, error) {
-	if expectedType := "HTTPS"; r.Type != expectedType {
-		return HTTPS{}, fmt.Errorf("record type not %s: %s", expectedType, r.Type)
-	}
-
-	parts := strings.SplitN(r.Data, " ", 3)
-	if minParts := 2; len(parts) < minParts { // SvcParams can be empty
-		return HTTPS{}, fmt.Errorf("malformed HTTPS value; expected at least %d fields in the form 'priority target [SvcParams]'", minParts)
-	}
-
-	priority, err := strconv.ParseUint(strings.TrimSpace(parts[0]), 10, 16)
-	if err != nil {
-		return HTTPS{}, fmt.Errorf("invalid priority %s: %v", parts[0], err)
-	}
-	target := parts[1]
-
-	svcParams, err := ParseSvcParams(parts[2])
-	if err != nil {
-		return HTTPS{}, fmt.Errorf("invalid SvcParams: %w", err)
-	}
-
-	return HTTPS{
-		Name:     r.Name,
-		TTL:      r.TTL,
-		Priority: uint16(priority),
-		Target:   target,
-		Value:    svcParams,
-	}, nil
-}
-
 func (r RR) toMX() (MX, error) {
 	if expectedType := "MX"; r.Type != expectedType {
 		return MX{}, fmt.Errorf("record type not %s: %s", expectedType, r.Type)
@@ -222,10 +192,10 @@ func (r RR) toMX() (MX, error) {
 	target := fields[1]
 
 	return MX{
-		Name:       r.Name,
-		TTL:        r.TTL,
-		Preference: uint16(priority),
-		Target:     target,
+		Name:     r.Name,
+		TTL:      r.TTL,
+		Priority: uint16(priority),
+		Target:   target,
 	}, nil
 }
 
@@ -270,14 +240,74 @@ func (r RR) toSRV() (SRV, error) {
 	}
 
 	return SRV{
-		Service:  strings.TrimPrefix(parts[0], "_"),
-		Proto:    strings.TrimPrefix(parts[1], "_"),
-		Name:     parts[2],
-		TTL:      r.TTL,
-		Priority: uint16(priority),
-		Weight:   uint16(weight),
-		Port:     uint16(port),
-		Target:   target,
+		Service:   strings.TrimPrefix(parts[0], "_"),
+		Transport: strings.TrimPrefix(parts[1], "_"),
+		Name:      parts[2],
+		TTL:       r.TTL,
+		Priority:  uint16(priority),
+		Weight:    uint16(weight),
+		Port:      uint16(port),
+		Target:    target,
+	}, nil
+}
+
+func (r RR) toSVCB() (SVCB, error) {
+	recType := r.Type
+	if recType != "HTTPS" && recType != "SVCB" {
+		return SVCB{}, fmt.Errorf("record type not SVCB or HTTPS: %s", r.Type)
+	}
+
+	paramsParts := strings.SplitN(r.Data, " ", 3)
+	if minParts := 2; len(paramsParts) < minParts { // SvcParams can be empty
+		return SVCB{}, fmt.Errorf("malformed HTTPS value; expected at least %d fields in the form 'priority target [SvcParams]'", minParts)
+	}
+
+	priority, err := strconv.ParseUint(strings.TrimSpace(paramsParts[0]), 10, 16)
+	if err != nil {
+		return SVCB{}, fmt.Errorf("invalid priority %s: %v", paramsParts[0], err)
+	}
+	target := paramsParts[1]
+
+	svcParams, err := ParseSvcParams(paramsParts[2])
+	if err != nil {
+		return SVCB{}, fmt.Errorf("invalid SvcParams: %w", err)
+	}
+
+	scheme := ""
+	var port uint64 = 0
+	nameParts := strings.SplitN(r.Name, ".", 3)
+	if strings.HasPrefix(nameParts[0], "_") && strings.HasPrefix(nameParts[1], "_") {
+		portStr := strings.TrimPrefix(nameParts[0], "_")
+		scheme = strings.TrimPrefix(nameParts[1], "_")
+
+		port, err = strconv.ParseUint(portStr, 10, 16)
+		if err != nil {
+			return SVCB{}, fmt.Errorf("invalid port %s: %v", portStr, err)
+		}
+		nameParts = nameParts[2:]
+	} else if strings.HasPrefix(nameParts[0], "_") {
+		scheme = strings.TrimPrefix(nameParts[0], "_")
+		nameParts = nameParts[1:]
+	}
+
+	if scheme == "" && recType == "HTTPS" {
+		// ok
+	} else if port > 0 && scheme == "https" && recType == "HTTPS" {
+		// ok
+	} else if scheme != "" && recType == "SVCB" {
+		// ok
+	} else {
+		return SVCB{}, fmt.Errorf("invalid name %q; expected format: '_port._proto.name' or '_proto.name'", r.Name)
+	}
+
+	return SVCB{
+		Scheme:        scheme,
+		URLSchemePort: uint16(port),
+		Name:          strings.Join(nameParts, "."),
+		TTL:           r.TTL,
+		Priority:      uint16(priority),
+		Target:        target,
+		Params:        &svcParams,
 	}, nil
 }
 
