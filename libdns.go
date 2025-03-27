@@ -3,8 +3,8 @@
 // small and idiomatic Go interfaces with well-defined semantics for the
 // purposes of reading and manipulating DNS records using DNS provider APIs.
 //
-// This documentation uses the definitions for terms from RFC 7719:
-// https://datatracker.ietf.org/doc/html/rfc7719
+// This documentation uses the definitions for terms from RFC 9499:
+// https://datatracker.ietf.org/doc/html/rfc9499
 //
 // This package represents DNS records in two primary ways: as opaque [RR]
 // structs, where the data is serialized as a single string as in a zone file;
@@ -80,7 +80,12 @@ type RecordGetter interface {
 type RecordAppender interface {
 	// AppendRecords creates the inputted records in the given zone and returns
 	// the populated records that were created. It never changes existing records.
-	// Therefore, it is invalid to use this method with CNAME-type records.
+	//
+	// Therefore, it makes little sense to use this method with CNAME-type
+	// records since if there are no existing records with the same name, it
+	// behaves the same as [libdns.RecordSetter.SetRecords], and if there are
+	// existing records with the same name, it will either fail or leave the
+	// zone in an invalid state.
 	//
 	// Implementations must honor context cancellation and be safe for concurrent
 	// use.
@@ -98,7 +103,7 @@ type RecordSetter interface {
 	// records in the output zone with that (name, type) pair are those that were
 	// provided in the input.
 	//
-	// In RFC 7719 terms, SetRecords appends, modifies, or deletes records in the
+	// In RFC 9499 terms, SetRecords appends, modifies, or deletes records in the
 	// zone so that for each RRset in the input, the records provided in the input
 	// are the only members of their RRset in the output zone.
 	//
@@ -117,6 +122,13 @@ type RecordSetter interface {
 	// rolling back changes on failure; if this is not possible, then it should
 	// be clearly documented that errors may result in partial changes to the
 	// zone.
+	//
+	// If SetRecords is used to add a CNAME record to a name with other existing
+	// non-DNSSEC records, implementations may either fail with an error, add
+	// the CNAME and leave the other records in place (in violation of the DNS
+	// standards), or add the CNAME and remove the other preexisting records.
+	// Therefore, users should proceed with caution when using SetRecords with
+	// CNAME records.
 	//
 	// Implementations must honor context cancellation and be safe for concurrent
 	// use.

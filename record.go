@@ -63,10 +63,29 @@ type RR struct {
 	// behavior.
 	Type string
 
-	// The data (or "value") of the record. This field should be formatted in the
-	// *unescaped* standard zone file syntax (technically, the "RDATA" field as
-	// defined by RFC 1035 §5.1). Due to variances in escape sequences and provider
-	// support, this field should not contain escapes.
+	// The data (or "value") of the record. This field should be formatted in
+	// the *unescaped* standard zone file syntax (technically, the "RDATA" field
+	// as defined by RFC 1035 §5.1). Due to variances in escape sequences and
+	// provider support, this field should not contain escapes. More concretely,
+	// the following [libdns.Record]s
+	//
+	//  []libdns.TXT{
+	//      {
+	//          Name: "alpha",
+	//          Text: `quotes " backslashes \\`,
+	//      }, {
+	//          Name: "beta",
+	//          Text: "\156\165\154\154: \000",
+	//      },
+	//  }
+	//
+	// should be equivalent to the following in zone file syntax:
+	//
+	//  alpha  0  IN  TXT  "quotes \" backslashes \\\\"
+	//  beta   0  IN  TXT  "null: \000"
+	//
+	// Implementations are not expected to support RFC 3597 “\#” escape
+	// sequences, but may choose to do so if they wish.
 	Data string
 }
 
