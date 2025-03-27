@@ -72,17 +72,17 @@ type RR struct {
 	//  []libdns.TXT{
 	//      {
 	//          Name: "alpha",
-	//          Text: `quotes " backslashes \\`,
+	//          Text: `quotes " backslashes \000`,
 	//      }, {
 	//          Name: "beta",
-	//          Text: "\156\165\154\154: \000",
+	//          Text: "del: \x7F",
 	//      },
 	//  }
 	//
 	// should be equivalent to the following in zone file syntax:
 	//
-	//  alpha  0  IN  TXT  "quotes \" backslashes \\\\"
-	//  beta   0  IN  TXT  "null: \000"
+	//  alpha  0  IN  TXT  "quotes \" backslashes \\000"
+	//  beta   0  IN  TXT  "del: \177"
 	//
 	// Implementations are not expected to support RFC 3597 “\#” escape
 	// sequences, but may choose to do so if they wish.
