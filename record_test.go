@@ -173,10 +173,10 @@ func TestToMX(t *testing.T) {
 				Data: "10 example.com.",
 			},
 			expect: MX{
-				Name:     "@",
-				TTL:      5 * time.Minute,
-				Priority: 10,
-				Target:   "example.com.",
+				Name:       "@",
+				TTL:        5 * time.Minute,
+				Preference: 10,
+				Target:     "example.com.",
 			},
 		},
 	} {

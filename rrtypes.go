@@ -77,10 +77,10 @@ func (c CNAME) RR() RR {
 // MX represents a parsed MX-type record, which is used to specify the hostnames
 // of the servers that accept mail for a domain.
 type MX struct {
-	Name     string
-	TTL      time.Duration
-	Priority uint16 // Lower values indicate that clients should prefer this server. This field is known as “Preference” in the DNS RFCs.
-	Target   string // The hostname of the mail server
+	Name       string
+	TTL        time.Duration
+	Preference uint16 // Lower values indicate that clients should prefer this server. This field is known as “Preference” in the DNS RFCs.
+	Target     string // The hostname of the mail server
 }
 
 func (m MX) RR() RR {
@@ -88,7 +88,7 @@ func (m MX) RR() RR {
 		Name: m.Name,
 		TTL:  m.TTL,
 		Type: "MX",
-		Data: fmt.Sprintf("%d %s", m.Priority, m.Target),
+		Data: fmt.Sprintf("%d %s", m.Preference, m.Target),
 	}
 }
 

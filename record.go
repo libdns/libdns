@@ -192,10 +192,10 @@ func (r RR) toMX() (MX, error) {
 	target := fields[1]
 
 	return MX{
-		Name:     r.Name,
-		TTL:      r.TTL,
-		Priority: uint16(priority),
-		Target:   target,
+		Name:       r.Name,
+		TTL:        r.TTL,
+		Preference: uint16(priority),
+		Target:     target,
 	}, nil
 }
 
