@@ -268,9 +268,12 @@ func (r RR) toSVCB() (SVCB, error) {
 	}
 	target := paramsParts[1]
 
-	svcParams, err := ParseSvcParams(paramsParts[2])
-	if err != nil {
-		return SVCB{}, fmt.Errorf("invalid SvcParams: %w", err)
+	svcParams := SvcParams{}
+	if len(paramsParts) > 2 {
+		svcParams, err = ParseSvcParams(paramsParts[2])
+		if err != nil {
+			return SVCB{}, fmt.Errorf("invalid SvcParams: %w", err)
+		}
 	}
 
 	scheme := ""
@@ -291,7 +294,7 @@ func (r RR) toSVCB() (SVCB, error) {
 	}
 
 	if scheme == "" && recType == "HTTPS" {
-		// ok
+		scheme = "https"
 	} else if port > 0 && scheme == "https" && recType == "HTTPS" {
 		// ok
 	} else if scheme != "" && recType == "SVCB" {

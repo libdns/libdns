@@ -79,7 +79,7 @@ func (c CNAME) RR() RR {
 type MX struct {
 	Name       string
 	TTL        time.Duration
-	Preference uint16 // Lower values indicate that clients should prefer this server. This field is known as “Preference” in the DNS RFCs.
+	Preference uint16 // Lower values indicate that clients should prefer this server. This field is similar to the “Priority” field in SRV records.
 	Target     string // The hostname of the mail server
 }
 

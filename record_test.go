@@ -121,7 +121,7 @@ func TestToCNAME(t *testing.T) {
 	}
 }
 
-func TestToHTTPS(t *testing.T) {
+func TestToSVCB(t *testing.T) {
 	for i, test := range []struct {
 		input     RR
 		expect    SVCB
@@ -137,11 +137,66 @@ func TestToHTTPS(t *testing.T) {
 			expect: SVCB{
 				Name:     "@",
 				TTL:      5 * time.Minute,
+				Scheme:   "https",
 				Priority: 1,
 				Target:   ".",
 				Params: &SvcParams{
 					"key": []string{"value1", "value2"},
 					"ech": []string{"foobar"},
+				},
+			},
+		},
+		{
+			input: RR{
+				Name: "_8443._https.test",
+				TTL:  1 * time.Hour,
+				Type: "HTTPS",
+				Data: "0 example.com.",
+			},
+			expect: SVCB{
+				Name:          "test",
+				Scheme:        "https",
+				URLSchemePort: 8443,
+				TTL:           1 * time.Hour,
+				Priority:      0,
+				Target:        "example.com.",
+				Params:        &SvcParams{},
+			},
+		},
+		{
+			input: RR{
+				Name: "_dns.example.com.",
+				TTL:  1 * time.Second,
+				Type: "SVCB",
+				Data: "2 example.org. alpn=dot",
+			},
+			expect: SVCB{
+				Name:     "example.com.",
+				Scheme:   "dns",
+				TTL:      1 * time.Second,
+				Priority: 2,
+				Target:   "example.org.",
+				Params: &SvcParams{
+					"alpn": []string{"dot"},
+				},
+			},
+		},
+		{
+			input: RR{
+				Name: "_853._dns.example.com.",
+				TTL:  1 * time.Second,
+				Type: "SVCB",
+				Data: "1 . port=53",
+			},
+			expect: SVCB{
+				Name:          "example.com.",
+				Scheme:        "dns",
+				URLSchemePort: 853,
+				TTL:           1 * time.Second,
+				Priority:      1,
+				Target:        ".",
+				Params: &SvcParams{
+					"port": []string{"53"},
 				},
 			},
 		},
