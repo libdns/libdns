@@ -342,6 +342,25 @@ func (s SVCB) RR() RR {
 type TXT struct {
 	Name string
 	TTL  time.Duration
+
+	// The “Text” field contains the arbitrary data associated with the TXT
+	// record. The contents of this field should not be wrapped in quotes as
+	// libdns implementations are expected to quote any fields as necessary. In
+	// addition, as discussed in the description of [libdns.RR.Data], you should
+	// not include any escaped characters in this field, as libdns will escape
+	// them for you.
+	//
+	// In the zone file format and the DNS wire format, a single TXT record is
+	// composed of one or more strings of no more than 255 bytes each ([RFC 1035
+	// §3.3.14], [RFC 7208 §3.3]). We eschew those restrictions here, and
+	// instead treat the entire TXT as a single, arbitrary-length string. libdns
+	// implementations are therefore expected to handle this as required by
+	// their respective DNS provider APIs. See the [DNSControl explainer] on
+	// this for more information.
+	//
+	// [RFC 1035 §3.3.14]: https://datatracker.ietf.org/doc/html/rfc1035#section-3.3.14
+	// [RFC 7208 §3.3]: https://datatracker.ietf.org/doc/html/rfc7208#section-3.3
+	// [DNSControl explainer]: https://docs.dnscontrol.org/developer-info/opinions#opinion-8-txt-records-are-one-long-string
 	Text string
 }
 
