@@ -6,6 +6,9 @@ import (
 	"github.com/libdns/libdns"
 )
 
+type RecordRequest struct {
+	Record Record `json:"record"`
+}
 type RecordResponse struct {
 	Type  string        `json:"type"`
 	Name  string        `json:"name"`
@@ -14,7 +17,11 @@ type RecordResponse struct {
 }
 
 type RecordsResponse struct {
-	DNSRecords []RecordResponse `json:"data.records"`
+	Status            uint   `json:"status"`
+	StatusDescription string `json:"status_description"`
+	Data              struct {
+		Records []Record `json:"records"`
+	} `json:"data"`
 }
 
 type Record struct {
@@ -53,11 +60,15 @@ func (r *RecordResponse) libDNSRecord(zone string) libdns.Record {
 		// Priority: r.Priority,
 	}
 }
+func libdnsToRecordRequest(r libdns.Record) RecordRequest {
+	return RecordRequest{
+		Record: libdnsToRecord(r),
+	}
+}
 
 func libdnsToRecord(r libdns.Record) Record {
 	return Record{
-		Type: r.Type,
-
+		Type:  r.Type,
 		Value: r.Value,
 		Name:  r.Name,
 		TTL:   int(r.TTL),

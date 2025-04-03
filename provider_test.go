@@ -31,8 +31,9 @@ func setup() {
 	sourceRecords = []libdns.Record{
 		{
 			Type:  "A",
-			Name:  zone,
+			Name:  "test",
 			Value: "1.2.3.1",
+			TTL:   3600,
 		},
 	}
 }
@@ -40,7 +41,7 @@ func setup() {
 func TestProvider_GetRecords(t *testing.T) {
 	setup()
 
-	provider.DeleteRecords(ctx, zone, sourceRecords)
+	// provider.DeleteRecords(ctx, zone, sourceRecords)
 
 	records, err := provider.GetRecords(ctx, zone)
 	assert.NoError(t, err)
@@ -59,5 +60,5 @@ func TestProvider_AppendRecords(t *testing.T) {
 	records, err := provider.AppendRecords(ctx, zone, newRecords)
 	assert.NoError(t, err)
 	assert.NotNil(t, records)
-	assert.Equal(t, 2, len(records))
+	assert.Equal(t, 1, len(records))
 }

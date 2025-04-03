@@ -23,7 +23,7 @@ import (
 // }
 
 func (p *Provider) updateRecord(ctx context.Context, zone string, record libdns.Record) (SavedRecordResponse, error) {
-	body, err := json.Marshal(libdnsToRecord(record))
+	body, err := json.Marshal(libdnsToRecordRequest(record))
 	reqURL := fmt.Sprintf("%s/domains/%s/dns", p.ApiURL, zone)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, reqURL, bytes.NewReader(body))
 
@@ -44,6 +44,7 @@ func (p *Provider) replaceRecords(ctx context.Context, zone string, records []li
 }
 
 func (p *Provider) doAPIRequest(req *http.Request, result interface{}) error {
+	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("API-Key", p.ApiKey)
 

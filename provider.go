@@ -35,8 +35,8 @@ func (p *Provider) GetRecords(ctx context.Context, zone string) ([]libdns.Record
 	var result RecordsResponse
 	err = p.doAPIRequest(req, &result)
 
-	recs := make([]libdns.Record, 0, len(result.DNSRecords))
-	for _, r := range result.DNSRecords {
+	recs := make([]libdns.Record, 0, len(result.Data.Records))
+	for _, r := range result.Data.Records {
 		recs = append(recs, r.libDNSRecord(zone))
 	}
 
