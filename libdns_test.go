@@ -124,18 +124,19 @@ func TestAbsoluteName(t *testing.T) {
 			zone:   "example.com.",
 			expect: "www.example.com.",
 		},
+		// see discussion at https://github.com/libdns/libdns/pull/153#discussion_r2013372378 about these next two
 		{
 			name:   "www.",
 			zone:   "example.com.",
-			expect: "www.example.com.",
-		},
-		{
-			name:   "foo.bar",
-			zone:   "example.com.",
-			expect: "foo.bar.example.com.",
+			expect: "www.",
 		},
 		{
 			name:   "foo.bar.",
+			zone:   "example.com.",
+			expect: "foo.bar.",
+		},
+		{
+			name:   "foo.bar",
 			zone:   "example.com.",
 			expect: "foo.bar.example.com.",
 		},

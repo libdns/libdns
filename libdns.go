@@ -238,7 +238,8 @@ func RelativeName(fqdn, zone string) string {
 
 // [AbsoluteName] makes name into a fully-qualified domain name (FQDN) by
 // prepending it to zone and tidying up the dots. For example, an input of
-// name “sub” and zone “example.com.” will return “sub.example.com.”.
+// name “sub” and zone “example.com.” will return “sub.example.com.”. If
+// the name ends with a dot, it will be returned as the FQDN.
 //
 // Using “@” as the name is the recommended way to represent the root of the
 // zone; however, unlike the [Record] struct, using the empty string "" for the
@@ -250,8 +251,9 @@ func AbsoluteName(name, zone string) string {
 	if name == "" || name == "@" {
 		return zone
 	}
-	if !strings.HasSuffix(name, ".") {
-		name += "."
+	if strings.HasSuffix(name, ".") {
+		// Already a FQDN, so just return it
+		return name
 	}
-	return name + zone
+	return name + "." + zone
 }
