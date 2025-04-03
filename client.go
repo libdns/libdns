@@ -45,7 +45,7 @@ func (p *Provider) replaceRecords(ctx context.Context, zone string, records []li
 
 func (p *Provider) doAPIRequest(req *http.Request, result interface{}) error {
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("API-Key", p.APIToken)
+	req.Header.Set("API-Key", p.ApiKey)
 
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {

@@ -24,7 +24,7 @@ func setup() {
 	}
 
 	provider = mijnhost.Provider{
-		APIToken: os.Getenv("MIJNHOST_API_TOKEN"),
+		ApiKey: os.Getenv("MIJNHOST_API_KEY"),
 	}
 	zone = os.Getenv("MIJNHOST_ZONE")
 	ctx = context.Background()

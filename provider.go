@@ -1,6 +1,5 @@
 // Package libdnstemplate implements a DNS record management client compatible
-// with the libdns interfaces for <PROVIDER NAME>. TODO: This package is a
-// template only. Customize all godocs for actual implementation.
+// with the libdns interfaces for mijn.host.
 package mijnhost
 
 import (
@@ -11,18 +10,10 @@ import (
 	"github.com/libdns/libdns"
 )
 
-// TODO: Providers must not require additional provisioning steps by the callers; it
-// should work simply by populating a struct and calling methods on it. If your DNS
-// service requires long-lived state or some extra provisioning step, do it implicitly
-// when methods are called; sync.Once can help with this, and/or you can use a
-// sync.(RW)Mutex in your Provider struct to synchronize implicit provisioning.
-
-// Provider facilitates DNS record manipulation with <TODO: PROVIDER NAME>.
+// Provider facilitates DNS record manipulation with mijn.host.
 type Provider struct {
-	// TODO: put config fields here (with snake_case json
-	// struct tags on exported fields), for example:
-	APIToken string `json:"api_token,omitempty"`
-	ApiURL   string `json:"api_url,omitempty"`
+	ApiKey string `json:"api_token,omitempty"`
+	ApiURL string `json:"api_url,omitempty"`
 }
 
 func (p *Provider) setDefaults() {
@@ -75,8 +66,8 @@ func (p *Provider) DeleteRecords(ctx context.Context, zone string, records []lib
 
 	zone = normalizeZone(zone)
 
-	// The api does not support deleting records, so we need to retrieve all of them, and update the whole set
-	// excluding the removed ones
+	// The api does not support deleting records, so we retrieve all of them, and update the whole set
+	// without the removed ones
 
 	allRecords, err := p.GetRecords(ctx, zone)
 	if err != nil {
