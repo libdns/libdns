@@ -200,11 +200,13 @@ type RecordDeleter interface {
 
 // [ZoneGetter] can list available DNS zones.
 type ZoneGetter interface {
-	// GetZones returns the list of available DNS zones for use by other [libdns]
-	// methods.
+	// GetZones returns the list of available DNS zones for use by other
+	// [libdns] methods. Not every upstream provider API supports listing
+	// available zones, and very few [libdns]-dependent packages use this
+	// method, so this method is optional.
 	//
-	// Implementations must honor context cancellation and be safe for concurrent
-	// use.
+	// Implementations must honor context cancellation and be safe for
+	// concurrent use.
 	GetZones(ctx context.Context) ([]Zone, error)
 }
 
