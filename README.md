@@ -15,7 +15,7 @@ The interfaces include:
 - [`RecordAppender`](https://pkg.go.dev/github.com/libdns/libdns#RecordAppender) to create new records.
 - [`RecordSetter`](https://pkg.go.dev/github.com/libdns/libdns#RecordSetter) to set (create or update) records.
 - [`RecordDeleter`](https://pkg.go.dev/github.com/libdns/libdns#RecordDeleter) to delete records.
-- [`ZoneGetter`](https://pkg.go.dev/github.com/libdns/libdns#ZoneGetter) to list zones.
+- [`ZoneLister`](https://pkg.go.dev/github.com/libdns/libdns#ZoneLister) to list zones.
 
 [See full godoc for detailed documentation.](https://pkg.go.dev/github.com/libdns/libdns)
 
