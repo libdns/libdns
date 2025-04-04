@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-        provider := mijnhost.Provider{ApiKey: "myaccountname"}
+        provider := mijnhost.Provider{ApiKey: "api-key-1"}
 
         records, err  := provider.GetRecords(context.TODO(), "example.com")
         if err != nil {

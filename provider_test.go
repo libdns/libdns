@@ -5,9 +5,10 @@ import (
 	"os"
 	"testing"
 
+	"mijnhost"
+
 	"github.com/joho/godotenv"
 	"github.com/libdns/libdns"
-	"github.com/libdns/mijnhost"
 	"github.com/stretchr/testify/assert"
 )
 
