@@ -1,4 +1,4 @@
-module github.com/libdns/mijnhost
+module mijnhost
 
 go 1.18
 
