@@ -344,7 +344,7 @@ type TXT struct {
 	TTL  time.Duration
 
 	// The “Text” field contains the arbitrary data associated with the TXT
-	// record. The contents of this field should not be wrapped in quotes as
+	// record. The contents of this field should *not* be wrapped in quotes as
 	// libdns implementations are expected to quote any fields as necessary. In
 	// addition, as discussed in the description of [libdns.RR.Data], you should
 	// not include any escaped characters in this field, as libdns will escape

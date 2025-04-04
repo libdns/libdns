@@ -9,6 +9,10 @@ import (
 )
 
 // Record is any type that can reduce itself to the [RR] struct.
+//
+// Primitive equality (“==”) between any two [Record]s is explicitly undefined;
+// if implementations need to compare records, they should either define their
+// own equality functions or compare the [RR] structs directly.
 type Record interface {
 	RR() RR
 }
