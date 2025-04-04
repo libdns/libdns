@@ -251,20 +251,20 @@ func (r RR) toSRV() (SRV, error) {
 	}, nil
 }
 
-func (r RR) toSVCB() (SVCB, error) {
+func (r RR) toSVCB() (ServiceBinding, error) {
 	recType := r.Type
 	if recType != "HTTPS" && recType != "SVCB" {
-		return SVCB{}, fmt.Errorf("record type not SVCB or HTTPS: %s", r.Type)
+		return ServiceBinding{}, fmt.Errorf("record type not SVCB or HTTPS: %s", r.Type)
 	}
 
 	paramsParts := strings.SplitN(r.Data, " ", 3)
 	if minParts := 2; len(paramsParts) < minParts { // SvcParams can be empty
-		return SVCB{}, fmt.Errorf("malformed HTTPS value; expected at least %d fields in the form 'priority target [SvcParams]'", minParts)
+		return ServiceBinding{}, fmt.Errorf("malformed HTTPS value; expected at least %d fields in the form 'priority target [SvcParams]'", minParts)
 	}
 
 	priority, err := strconv.ParseUint(strings.TrimSpace(paramsParts[0]), 10, 16)
 	if err != nil {
-		return SVCB{}, fmt.Errorf("invalid priority %s: %v", paramsParts[0], err)
+		return ServiceBinding{}, fmt.Errorf("invalid priority %s: %v", paramsParts[0], err)
 	}
 	target := paramsParts[1]
 
@@ -272,7 +272,7 @@ func (r RR) toSVCB() (SVCB, error) {
 	if len(paramsParts) > 2 {
 		svcParams, err = ParseSvcParams(paramsParts[2])
 		if err != nil {
-			return SVCB{}, fmt.Errorf("invalid SvcParams: %w", err)
+			return ServiceBinding{}, fmt.Errorf("invalid SvcParams: %w", err)
 		}
 	}
 
@@ -285,7 +285,7 @@ func (r RR) toSVCB() (SVCB, error) {
 
 		port, err = strconv.ParseUint(portStr, 10, 16)
 		if err != nil {
-			return SVCB{}, fmt.Errorf("invalid port %s: %v", portStr, err)
+			return ServiceBinding{}, fmt.Errorf("invalid port %s: %v", portStr, err)
 		}
 		nameParts = nameParts[2:]
 	} else if strings.HasPrefix(nameParts[0], "_") {
@@ -300,10 +300,10 @@ func (r RR) toSVCB() (SVCB, error) {
 	} else if scheme != "" && recType == "SVCB" {
 		// ok
 	} else {
-		return SVCB{}, fmt.Errorf("invalid name %q; expected format: '_port._proto.name' or '_proto.name'", r.Name)
+		return ServiceBinding{}, fmt.Errorf("invalid name %q; expected format: '_port._proto.name' or '_proto.name'", r.Name)
 	}
 
-	return SVCB{
+	return ServiceBinding{
 		Scheme:        scheme,
 		URLSchemePort: uint16(port),
 		Name:          strings.Join(nameParts, "."),

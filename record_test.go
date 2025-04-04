@@ -124,7 +124,7 @@ func TestToCNAME(t *testing.T) {
 func TestToSVCB(t *testing.T) {
 	for i, test := range []struct {
 		input     RR
-		expect    SVCB
+		expect    ServiceBinding
 		shouldErr bool
 	}{
 		{
@@ -134,7 +134,7 @@ func TestToSVCB(t *testing.T) {
 				Type: "HTTPS",
 				Data: `1 . key=value1,value2 ech="foobar"`,
 			},
-			expect: SVCB{
+			expect: ServiceBinding{
 				Name:     "@",
 				TTL:      5 * time.Minute,
 				Scheme:   "https",
@@ -153,7 +153,7 @@ func TestToSVCB(t *testing.T) {
 				Type: "HTTPS",
 				Data: "0 example.com.",
 			},
-			expect: SVCB{
+			expect: ServiceBinding{
 				Name:          "test",
 				Scheme:        "https",
 				URLSchemePort: 8443,
@@ -170,7 +170,7 @@ func TestToSVCB(t *testing.T) {
 				Type: "SVCB",
 				Data: "2 example.org. alpn=dot",
 			},
-			expect: SVCB{
+			expect: ServiceBinding{
 				Name:     "example.com.",
 				Scheme:   "dns",
 				TTL:      1 * time.Second,
@@ -188,7 +188,7 @@ func TestToSVCB(t *testing.T) {
 				Type: "SVCB",
 				Data: "1 . port=53",
 			},
-			expect: SVCB{
+			expect: ServiceBinding{
 				Name:          "example.com.",
 				Scheme:        "dns",
 				URLSchemePort: 853,

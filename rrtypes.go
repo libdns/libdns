@@ -172,20 +172,20 @@ func (s SRV) RR() RR {
 	}
 }
 
-// SVCB represents a parsed SVCB-type record, which is used to provide the
+// ServiceBinding represents a parsed ServiceBinding-type record, which is used to provide the
 // target and various key–value parameters for a service. HTTPS records are
-// defined as a “SVCB-Compatible RR Type”, which means that their data
-// structures are identical to SVCB records, albeit with a different type name
+// defined as a “ServiceBinding-Compatible RR Type”, which means that their data
+// structures are identical to ServiceBinding records, albeit with a different type name
 // and semantics.
 //
 // HTTPS-type records are  used to provide clients with information for
 // establishing HTTPS connections to servers. It may include data about ALPN,
 // ECH, IP hints, and more.
 //
-// Unlike the other RR types that are hostname-focused or service-focused, SVCB
+// Unlike the other RR types that are hostname-focused or service-focused, ServiceBinding
 // (“Service Binding”) records are URL-focused. This distinction is generally
 // irrelevant, but is important when disusing the port fields.
-type SVCB struct {
+type ServiceBinding struct {
 	// “Scheme” is the scheme of the URL used to access the service, or some
 	// other protocol identifier registered with IANA. This field should not
 	// contain a leading underscore.
@@ -299,7 +299,7 @@ type SVCB struct {
 // RR converts the parsed record data to a generic [Record] struct.
 //
 // EXPERIMENTAL; subject to change or removal.
-func (s SVCB) RR() RR {
+func (s ServiceBinding) RR() RR {
 	var name string
 	var recType string
 	if s.Scheme == "https" || s.Scheme == "http" || s.Scheme == "wss" || s.Scheme == "ws" {
