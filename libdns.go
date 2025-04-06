@@ -15,9 +15,17 @@
 //
 // This package represents records flexibly with the [Record] interface, which
 // is any type that can transform itself into the [RR] struct, which is a
-// type-agnostic [Resource Record].
-// (that is, a name, type, class, TTL, and data). Specific record types such as
-// [A], [AAAA], [SRV], [HTTPS], and others implement the [Record] interface.
+// type-agnostic [Resource Record] (that is, a name, type, class, TTL, and data).
+// Specific record types such as [Address], [SRV], [TXT], and others implement
+// the [Record] interface.
+//
+// Implementations of the libdns interfaces should accept as input any [Record]
+// value, and should return as output the concrete struct types that implement
+// the [Record] interface (i.e. [Address], [TXT], [ServiceBinding], etc). This
+// is important to ensure the provider libraries are robust and also predictable:
+// callers can reliably type-switch on the output to immediately access structured
+// data about each record without the possibility of errors. Returned values should
+// be of types defined by this package to make type-assertions reliable.
 //
 // Records are described independently of any particular zone, a convention that
 // grants records portability across zones. As such, record names are partially
