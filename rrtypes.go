@@ -287,13 +287,14 @@ type ServiceBinding struct {
 	// “Params” is a map of key–value pairs that are used to specify various
 	// parameters for the service. The keys are typically registered with IANA,
 	// and which keys are valid is service-dependent.
+	// https://www.iana.org/assignments/dns-svcb/dns-svcb.xhtml
 	//
 	// Note that there is a key called “mandatory”, but this does not mean that
 	// it is mandatory for you to set the listed keys. Instead, this means that
 	// if a client does not understand all of the listed keys, then it must
 	// ignore the entire record. This is similar to the “critical” flag in CAA
 	// records.
-	Params *SvcParams
+	Params SvcParams
 }
 
 // RR converts the parsed record data to a generic [Record] struct.
@@ -319,7 +320,7 @@ func (s ServiceBinding) RR() RR {
 	}
 
 	var params string
-	if s.Priority == 0 && len(*s.Params) != 0 {
+	if s.Priority == 0 && len(s.Params) != 0 {
 		// The SvcParams should be empty in AliasMode, so we'll fix that for
 		// you.
 		params = ""

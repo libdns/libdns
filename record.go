@@ -314,7 +314,7 @@ func (r RR) toSVCB() (ServiceBinding, error) {
 		TTL:           r.TTL,
 		Priority:      uint16(priority),
 		Target:        target,
-		Params:        &svcParams,
+		Params:        svcParams,
 	}, nil
 }
 
@@ -331,6 +331,9 @@ func (r RR) toTXT() (TXT, error) {
 
 // SvcParams represents SvcParamKey=SvcParamValue pairs as described in
 // RFC 9460 section 2.1. See https://www.rfc-editor.org/rfc/rfc9460#presentation.
+//
+// Note that this type is not primitively comparable, so using == for
+// structs containnig a field of this type will panic.
 type SvcParams map[string][]string
 
 // String serializes svcParams into zone presentation format described by RFC 9460.

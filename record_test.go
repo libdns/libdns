@@ -140,7 +140,7 @@ func TestToSVCB(t *testing.T) {
 				Scheme:   "https",
 				Priority: 1,
 				Target:   ".",
-				Params: &SvcParams{
+				Params: SvcParams{
 					"key": []string{"value1", "value2"},
 					"ech": []string{"foobar"},
 				},
@@ -160,7 +160,7 @@ func TestToSVCB(t *testing.T) {
 				TTL:           1 * time.Hour,
 				Priority:      0,
 				Target:        "example.com.",
-				Params:        &SvcParams{},
+				Params:        SvcParams{},
 			},
 		},
 		{
@@ -176,7 +176,7 @@ func TestToSVCB(t *testing.T) {
 				TTL:      1 * time.Second,
 				Priority: 2,
 				Target:   "example.org.",
-				Params: &SvcParams{
+				Params: SvcParams{
 					"alpn": []string{"dot"},
 				},
 			},
@@ -195,7 +195,7 @@ func TestToSVCB(t *testing.T) {
 				TTL:           1 * time.Second,
 				Priority:      1,
 				Target:        ".",
-				Params: &SvcParams{
+				Params: SvcParams{
 					"port": []string{"53"},
 				},
 			},
