@@ -252,6 +252,11 @@ func RelativeName(fqdn, zone string) string {
 // Using “@” as the name is the recommended way to represent the root of the
 // zone; however, unlike the [Record] struct, using the empty string "" for the
 // name *is* permitted here, and will be treated identically to “@”.
+//
+// In the name already has a trailing dot, it is returned as-is. This is similar
+// to the behavior of [path/filepath.Abs], and means that [AbsoluteName] is
+// idempotent, so it is safe to call multiple times without first checking if
+// the name is absolute or relative.
 func AbsoluteName(name, zone string) string {
 	if zone == "" {
 		return strings.Trim(name, ".")
