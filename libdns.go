@@ -95,6 +95,9 @@ type RecordAppender interface {
 	// existing records with the same name, it will either fail or leave the
 	// zone in an invalid state.
 	//
+	// Implementations should return struct types defined by this package which
+	// correspond with the specific RR-type, rather than the [RR] struct, if possible.
+	//
 	// Implementations must honor context cancellation and be safe for concurrent
 	// use.
 	AppendRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
@@ -137,6 +140,9 @@ type RecordSetter interface {
 	// standards), or add the CNAME and remove the other preexisting records.
 	// Therefore, users should proceed with caution when using SetRecords with
 	// CNAME records.
+	//
+	// Implementations should return struct types defined by this package which
+	// correspond with the specific RR-type, rather than the [RR] struct, if possible.
 	//
 	// Implementations must honor context cancellation and be safe for concurrent
 	// use.
@@ -201,6 +207,9 @@ type RecordDeleter interface {
 	// Note that it is semantically invalid to remove the last “NS” record from a
 	// zone, so attempting to do is undefined behavior.
 	//
+	// Implementations should return struct types defined by this package which
+	// correspond with the specific RR-type, rather than the [RR] struct, if possible.
+	//
 	// Implementations must honor context cancellation and be safe for concurrent
 	// use.
 	DeleteRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
@@ -212,6 +221,9 @@ type ZoneLister interface {
 	// [libdns] methods. Not every upstream provider API supports listing
 	// available zones, and very few [libdns]-dependent packages use this
 	// method, so this method is optional.
+	//
+	// Implementations should return struct types defined by this package which
+	// correspond with the specific RR-type, rather than the [RR] struct, if possible.
 	//
 	// Implementations must honor context cancellation and be safe for
 	// concurrent use.

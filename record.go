@@ -23,6 +23,13 @@ type Record interface {
 // The fields in this struct are common to all RRs, with the data field
 // being opaque; it has no particular meaning until it is parsed.
 //
+// This type should NOT be returned by implementations of the libdns interfaces;
+// in other words, methods such as GetRecords, AppendRecords, etc., should
+// not return RR values. Instead, they should return the structs corresponding
+// to the specific RR types (such as [Address], [TXT], etc). This provides
+// consistency for callers who can then reliably type-switch or type-assert the
+// output without the possibility for errors.
+//
 // [DNS Resource Record]: https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records
 type RR struct {
 	// The name of the record. It is partially qualified, relative to the zone.
@@ -111,7 +118,7 @@ func (r RR) Parse() (Record, error) {
 	case "CNAME":
 		return r.toCNAME()
 	case "HTTPS", "SVCB":
-		return r.toSVCB()
+		return r.toServiceBinding()
 	case "MX":
 		return r.toMX()
 	case "NS":
@@ -255,7 +262,7 @@ func (r RR) toSRV() (SRV, error) {
 	}, nil
 }
 
-func (r RR) toSVCB() (ServiceBinding, error) {
+func (r RR) toServiceBinding() (ServiceBinding, error) {
 	recType := r.Type
 	if recType != "HTTPS" && recType != "SVCB" {
 		return ServiceBinding{}, fmt.Errorf("record type not SVCB or HTTPS: %s", r.Type)

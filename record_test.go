@@ -201,7 +201,7 @@ func TestToSVCB(t *testing.T) {
 			},
 		},
 	} {
-		actual, err := test.input.toSVCB()
+		actual, err := test.input.toServiceBinding()
 		if err == nil && test.shouldErr {
 			t.Errorf("Test %d: Expected error, got none", i)
 		}
