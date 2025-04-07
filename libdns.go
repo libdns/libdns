@@ -9,9 +9,9 @@
 // This package represents DNS records in two primary ways: as opaque [RR]
 // structs, where the data is serialized as a single string as in a zone file;
 // and as individual type structures, where the data is parsed into its separate
-// fields for easier manipulation by Go programs (for example: [SRV] and [HTTPS]
-// types). This hybrid design offers great flexibility for both DNS provider
-// packages and consumer Go programs.
+// fields for easier manipulation by Go programs (for example: [SRV] and
+// [ServiceBinding] types). This hybrid design offers great flexibility for both
+// DNS provider packages and consumer Go programs.
 //
 // This package represents records flexibly with the [Record] interface, which
 // is any type that can transform itself into the [RR] struct, which is a

@@ -1,9 +1,9 @@
 libdns - Universal DNS provider APIs for Go
 ===========================================
 
-<a href="https://pkg.go.dev/github.com/libdns/libdns"><img src="https://img.shields.io/badge/godoc-reference-blue.svg"></a>
+[![Go Reference](https://pkg.go.dev/badge/github.com/libdns/libdns)](https://pkg.go.dev/github.com/libdns/libdns@v1.0.0-beta.1)
 
-**⚠️ Work-in-progress. Exported APIs are subject to change.**
+**⚠️ v1.0 is now in beta. Any packages that implemented prior versions should upgrade. The betas are subject to change, but big changes are unlikely at this point. We encourage all maintainers to upgrade their packages. Thank you!**
 
 `libdns` is a collection of free-range DNS provider client implementations written in Go! With libdns packages, your Go program can manage DNS records across any supported providers. A "provider" is a service or program that manages a DNS zone.
 
@@ -17,7 +17,13 @@ The interfaces include:
 - [`RecordDeleter`](https://pkg.go.dev/github.com/libdns/libdns#RecordDeleter) to delete records.
 - [`ZoneLister`](https://pkg.go.dev/github.com/libdns/libdns#ZoneLister) to list zones.
 
-[See full godoc for detailed documentation.](https://pkg.go.dev/github.com/libdns/libdns)
+[See full godoc for detailed information.](https://pkg.go.dev/github.com/libdns/libdns@v1.0.0-beta.1)
+
+## Implementations
+
+This package only defines standardized APIs described above. To actually manipulate DNS records/zones, you will need a package specific to your provider that implements these interfaces.
+
+You can choose from over 75 packages at [https://github.com/libdns](https://github.com/orgs/libdns/repositories?type=all).
 
 
 ## Example
