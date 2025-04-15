@@ -11,11 +11,11 @@ This repository defines the core APIs that provider packages should implement. T
 
 The interfaces include:
 
-- [`RecordGetter`](https://pkg.go.dev/github.com/libdns/libdns#RecordGetter) to list records.
-- [`RecordAppender`](https://pkg.go.dev/github.com/libdns/libdns#RecordAppender) to create new records.
-- [`RecordSetter`](https://pkg.go.dev/github.com/libdns/libdns#RecordSetter) to set (create or update) records.
-- [`RecordDeleter`](https://pkg.go.dev/github.com/libdns/libdns#RecordDeleter) to delete records.
-- [`ZoneLister`](https://pkg.go.dev/github.com/libdns/libdns#ZoneLister) to list zones.
+- [`RecordGetter`](https://pkg.go.dev/github.com/libdns/libdns@v1.0.0-beta.1#RecordGetter) to list records.
+- [`RecordAppender`](https://pkg.go.dev/github.com/libdns/libdns@v1.0.0-beta.1#RecordAppender) to create new records.
+- [`RecordSetter`](https://pkg.go.dev/github.com/libdns/libdns@v1.0.0-beta.1#RecordSetter) to set (create or update) records.
+- [`RecordDeleter`](https://pkg.go.dev/github.com/libdns/libdns@v1.0.0-beta.1#RecordDeleter) to delete records.
+- [`ZoneLister`](https://pkg.go.dev/github.com/libdns/libdns@v1.0.0-beta.1#ZoneLister) to list zones.
 
 [See full godoc for detailed information.](https://pkg.go.dev/github.com/libdns/libdns@v1.0.0-beta.1)
 
