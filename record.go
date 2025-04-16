@@ -30,6 +30,11 @@ type Record interface {
 // consistency for callers who can then reliably type-switch or type-assert the
 // output without the possibility for errors.
 //
+// Implementations are permitted to define their own types that implement the
+// [RR] interface, but this should only be done for provider-specific types. If
+// you're instead wanting to use a general-purpose DNS RR type that is not yet
+// supported by this package, please open an issue or PR to add it.
+//
 // [DNS Resource Record]: https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records
 type RR struct {
 	// The name of the record. It is partially qualified, relative to the zone.
