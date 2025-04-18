@@ -305,6 +305,24 @@ func TestToSRV(t *testing.T) {
 				Target:    "example.com",
 			},
 		},
+		{
+			input: RR{
+				Name: "_service._proto",
+				TTL:  5 * time.Minute,
+				Type: "SRV",
+				Data: "1 2 1234 example.com",
+			},
+			expect: SRV{
+				Service:   "service",
+				Transport: "proto",
+				Name:      "@",
+				TTL:       5 * time.Minute,
+				Priority:  1,
+				Weight:    2,
+				Port:      1234,
+				Target:    "example.com",
+			},
+		},
 	} {
 		actual, err := test.input.toSRV()
 		if err == nil && test.shouldErr {

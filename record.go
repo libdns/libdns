@@ -251,14 +251,18 @@ func (r RR) toSRV() (SRV, error) {
 	target := fields[3]
 
 	parts := strings.SplitN(r.Name, ".", 3)
-	if len(parts) < 3 {
-		return SRV{}, fmt.Errorf("name %v does not contain enough fields; expected format: '_service._proto.name'", r.Name)
+	if len(parts) < 2 {
+		return SRV{}, fmt.Errorf("name %v does not contain enough fields; expected format: '_service._proto.name' or '_service._proto'", r.Name)
+	}
+	name := "@"
+	if len(parts) == 3 {
+		name = parts[2]
 	}
 
 	return SRV{
 		Service:   strings.TrimPrefix(parts[0], "_"),
 		Transport: strings.TrimPrefix(parts[1], "_"),
-		Name:      parts[2],
+		Name:      name,
 		TTL:       r.TTL,
 		Priority:  uint16(priority),
 		Weight:    uint16(weight),
