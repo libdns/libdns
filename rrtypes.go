@@ -3,6 +3,7 @@ package libdns
 import (
 	"fmt"
 	"net/netip"
+	"strings"
 	"time"
 )
 
@@ -163,6 +164,8 @@ func (s SRV) RR() RR {
 		// Otherwise, we need to prepend the underscores to the name.
 		name = fmt.Sprintf("_%s._%s.%s", s.Service, s.Transport, s.Name)
 	}
+
+	name = strings.TrimSuffix(name, ".@")
 
 	return RR{
 		Name: name,
@@ -327,6 +330,8 @@ func (s ServiceBinding) RR() RR {
 	} else {
 		params = s.Params.String()
 	}
+
+	name = strings.TrimSuffix(name, ".@")
 
 	return RR{
 		Name: name,
