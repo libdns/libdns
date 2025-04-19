@@ -200,6 +200,72 @@ func TestToSVCB(t *testing.T) {
 				},
 			},
 		},
+		{
+			input: RR{
+				Name: "_1234._examplescheme",
+				TTL:  1 * time.Hour,
+				Type: "SVCB",
+				Data: "0 example.com.",
+			},
+			expect: ServiceBinding{
+				Name:          "@",
+				Scheme:        "examplescheme",
+				URLSchemePort: 1234,
+				TTL:           1 * time.Hour,
+				Priority:      0,
+				Target:        "example.com.",
+				Params:        SvcParams{},
+			},
+		},
+		{
+			input: RR{
+				Name: "_examplescheme",
+				TTL:  1 * time.Hour,
+				Type: "SVCB",
+				Data: "0 example.com.",
+			},
+			expect: ServiceBinding{
+				Name:     "@",
+				Scheme:   "examplescheme",
+				TTL:      1 * time.Hour,
+				Priority: 0,
+				Target:   "example.com.",
+				Params:   SvcParams{},
+			},
+		},
+		{
+			input: RR{
+				Name: "_examplescheme.@",
+				TTL:  1 * time.Hour,
+				Type: "SVCB",
+				Data: "0 example.com.",
+			},
+			expect: ServiceBinding{
+				Name:     "@",
+				Scheme:   "examplescheme",
+				TTL:      1 * time.Hour,
+				Priority: 0,
+				Target:   "example.com.",
+				Params:   SvcParams{},
+			},
+		},
+		{
+			input: RR{
+				Name: "_1234._examplescheme.@",
+				TTL:  1 * time.Hour,
+				Type: "SVCB",
+				Data: "0 example.com.",
+			},
+			expect: ServiceBinding{
+				Name:          "@",
+				Scheme:        "examplescheme",
+				URLSchemePort: 1234,
+				TTL:           1 * time.Hour,
+				Priority:      0,
+				Target:        "example.com.",
+				Params:        SvcParams{},
+			},
+		},
 	} {
 		actual, err := test.input.toServiceBinding()
 		if err == nil && test.shouldErr {
@@ -298,6 +364,24 @@ func TestToSRV(t *testing.T) {
 				Service:   "service",
 				Transport: "proto",
 				Name:      "name",
+				TTL:       5 * time.Minute,
+				Priority:  1,
+				Weight:    2,
+				Port:      1234,
+				Target:    "example.com",
+			},
+		},
+		{
+			input: RR{
+				Name: "_service._proto",
+				TTL:  5 * time.Minute,
+				Type: "SRV",
+				Data: "1 2 1234 example.com",
+			},
+			expect: SRV{
+				Service:   "service",
+				Transport: "proto",
+				Name:      "@",
 				TTL:       5 * time.Minute,
 				Priority:  1,
 				Weight:    2,

@@ -251,14 +251,18 @@ func (r RR) toSRV() (SRV, error) {
 	target := fields[3]
 
 	parts := strings.SplitN(r.Name, ".", 3)
-	if len(parts) < 3 {
-		return SRV{}, fmt.Errorf("name %v does not contain enough fields; expected format: '_service._proto.name'", r.Name)
+	if len(parts) < 2 {
+		return SRV{}, fmt.Errorf("name %v does not contain enough fields; expected format: '_service._proto.name' or '_service._proto'", r.Name)
+	}
+	name := "@"
+	if len(parts) == 3 {
+		name = parts[2]
 	}
 
 	return SRV{
 		Service:   strings.TrimPrefix(parts[0], "_"),
 		Transport: strings.TrimPrefix(parts[1], "_"),
-		Name:      parts[2],
+		Name:      name,
 		TTL:       r.TTL,
 		Priority:  uint16(priority),
 		Weight:    uint16(weight),
@@ -295,6 +299,14 @@ func (r RR) toServiceBinding() (ServiceBinding, error) {
 	scheme := ""
 	var port uint64 = 0
 	nameParts := strings.SplitN(r.Name, ".", 3)
+	// Handle the case where the name is only underscore-prefixed labels
+	if len(nameParts) <= 1 && strings.HasPrefix(nameParts[0], "_") {
+		nameParts = append(nameParts, "@")
+	} else if len(nameParts) == 2 && strings.HasPrefix(nameParts[1], "_") {
+		nameParts = append(nameParts, "@")
+	}
+
+	// Parse the first two parts of the name
 	if strings.HasPrefix(nameParts[0], "_") && strings.HasPrefix(nameParts[1], "_") {
 		portStr := strings.TrimPrefix(nameParts[0], "_")
 		scheme = strings.TrimPrefix(nameParts[1], "_")
