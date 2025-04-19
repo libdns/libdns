@@ -477,3 +477,64 @@ func TestSvcParamsString(t *testing.T) {
 		}
 	}
 }
+
+func TestRelativeRRNames(t *testing.T) {
+	for _, test := range []struct {
+		input  Record
+		expect string
+	}{
+		{
+			input: ServiceBinding{
+				Name:          "@",
+				Scheme:        "examplescheme",
+				URLSchemePort: 1234,
+				TTL:           1 * time.Hour,
+				Priority:      1,
+				Target:        ".",
+				Params:        SvcParams{},
+			},
+			expect: "_1234._examplescheme",
+		},
+		{
+			input: SRV{
+				Name:      "@",
+				Service:   "exampleservice",
+				Transport: "tcp",
+				TTL:       1 * time.Hour,
+				Priority:  1,
+				Weight:    2,
+				Target:    ".",
+			},
+			expect: "_exampleservice._tcp",
+		},
+		{
+			input: ServiceBinding{
+				Name:          "test",
+				Scheme:        "examplescheme",
+				URLSchemePort: 1234,
+				TTL:           1 * time.Hour,
+				Priority:      1,
+				Target:        ".",
+				Params:        SvcParams{},
+			},
+			expect: "_1234._examplescheme.test",
+		},
+		{
+			input: SRV{
+				Name:      "test",
+				Service:   "exampleservice",
+				Transport: "tcp",
+				TTL:       1 * time.Hour,
+				Priority:  1,
+				Weight:    2,
+				Target:    ".",
+			},
+			expect: "_exampleservice._tcp.test",
+		},
+	} {
+		rr := test.input.RR()
+		if rr.Name != test.expect {
+			t.Errorf("Expected %q, got %q", test.expect, rr.Name)
+		}
+	}
+}
