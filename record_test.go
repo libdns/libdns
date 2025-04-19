@@ -200,6 +200,72 @@ func TestToSVCB(t *testing.T) {
 				},
 			},
 		},
+		{
+			input: RR{
+				Name: "_1234._examplescheme",
+				TTL:  1 * time.Hour,
+				Type: "SVCB",
+				Data: "0 example.com.",
+			},
+			expect: ServiceBinding{
+				Name:          "@",
+				Scheme:        "examplescheme",
+				URLSchemePort: 1234,
+				TTL:           1 * time.Hour,
+				Priority:      0,
+				Target:        "example.com.",
+				Params:        SvcParams{},
+			},
+		},
+		{
+			input: RR{
+				Name: "_examplescheme",
+				TTL:  1 * time.Hour,
+				Type: "SVCB",
+				Data: "0 example.com.",
+			},
+			expect: ServiceBinding{
+				Name:     "@",
+				Scheme:   "examplescheme",
+				TTL:      1 * time.Hour,
+				Priority: 0,
+				Target:   "example.com.",
+				Params:   SvcParams{},
+			},
+		},
+		{
+			input: RR{
+				Name: "_examplescheme.@",
+				TTL:  1 * time.Hour,
+				Type: "SVCB",
+				Data: "0 example.com.",
+			},
+			expect: ServiceBinding{
+				Name:     "@",
+				Scheme:   "examplescheme",
+				TTL:      1 * time.Hour,
+				Priority: 0,
+				Target:   "example.com.",
+				Params:   SvcParams{},
+			},
+		},
+		{
+			input: RR{
+				Name: "_1234._examplescheme.@",
+				TTL:  1 * time.Hour,
+				Type: "SVCB",
+				Data: "0 example.com.",
+			},
+			expect: ServiceBinding{
+				Name:          "@",
+				Scheme:        "examplescheme",
+				URLSchemePort: 1234,
+				TTL:           1 * time.Hour,
+				Priority:      0,
+				Target:        "example.com.",
+				Params:        SvcParams{},
+			},
+		},
 	} {
 		actual, err := test.input.toServiceBinding()
 		if err == nil && test.shouldErr {

@@ -299,6 +299,14 @@ func (r RR) toServiceBinding() (ServiceBinding, error) {
 	scheme := ""
 	var port uint64 = 0
 	nameParts := strings.SplitN(r.Name, ".", 3)
+	// Handle the case where the name is only underscore-prefixed labels
+	if len(nameParts) <= 1 && strings.HasPrefix(nameParts[0], "_") {
+		nameParts = append(nameParts, "@")
+	} else if len(nameParts) == 2 && strings.HasPrefix(nameParts[1], "_") {
+		nameParts = append(nameParts, "@")
+	}
+
+	// Parse the first two parts of the name
 	if strings.HasPrefix(nameParts[0], "_") && strings.HasPrefix(nameParts[1], "_") {
 		portStr := strings.TrimPrefix(nameParts[0], "_")
 		scheme = strings.TrimPrefix(nameParts[1], "_")
