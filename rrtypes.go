@@ -27,11 +27,19 @@ func (a Address) RR() RR {
 	if a.IP.Is6() {
 		recType = "AAAA"
 	}
+	ipString := a.IP.String()
+	if ipString == "invalid IP" {
+		// If the IP address is null, then we get the string "invalid IP". We'll
+		// convert this to the empty string to make
+		// [libdns.RecordDeleter.DeleteRecords] easier to use when missing IP
+		// addresses are passed.
+		ipString = ""
+	}
 	return RR{
 		Name: a.Name,
 		TTL:  a.TTL,
 		Type: recType,
-		Data: a.IP.String(),
+		Data: ipString,
 	}
 }
 
