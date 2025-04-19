@@ -27,11 +27,19 @@ func (a Address) RR() RR {
 	if a.IP.Is6() {
 		recType = "AAAA"
 	}
+	ipString := a.IP.String()
+	if ipString == "invalid IP" {
+		// If the IP address is null, then we get the string "invalid IP". We'll
+		// convert this to the empty string to make
+		// [libdns.RecordDeleter.DeleteRecords] easier to use when missing IP
+		// addresses are passed.
+		ipString = ""
+	}
 	return RR{
 		Name: a.Name,
 		TTL:  a.TTL,
 		Type: recType,
-		Data: a.IP.String(),
+		Data: ipString,
 	}
 }
 
@@ -49,11 +57,16 @@ type CAA struct {
 }
 
 func (c CAA) RR() RR {
+	data := fmt.Sprintf(`%d %s %q`, c.Flags, c.Tag, c.Value)
+	// Make sure that the zero value is an empty string
+	if data == `0  ""` {
+		data = ""
+	}
 	return RR{
 		Name: c.Name,
 		TTL:  c.TTL,
 		Type: "CAA",
-		Data: fmt.Sprintf(`%d %s %q`, c.Flags, c.Tag, c.Value),
+		Data: data,
 	}
 }
 
@@ -84,11 +97,16 @@ type MX struct {
 }
 
 func (m MX) RR() RR {
+	data := fmt.Sprintf("%d %s", m.Preference, m.Target)
+	// Make sure that the zero value is an empty string
+	if data == "0 " {
+		data = ""
+	}
 	return RR{
 		Name: m.Name,
 		TTL:  m.TTL,
 		Type: "MX",
-		Data: fmt.Sprintf("%d %s", m.Preference, m.Target),
+		Data: data,
 	}
 }
 
@@ -164,11 +182,17 @@ func (s SRV) RR() RR {
 		name = fmt.Sprintf("_%s._%s.%s", s.Service, s.Transport, s.Name)
 	}
 
+	data := fmt.Sprintf("%d %d %d %s", s.Priority, s.Weight, s.Port, s.Target)
+	// Make sure that the zero value is an empty string
+	if data == "0 0 0 " {
+		data = ""
+	}
+
 	return RR{
 		Name: name,
 		TTL:  s.TTL,
 		Type: "SRV",
-		Data: fmt.Sprintf("%d %d %d %s", s.Priority, s.Weight, s.Port, s.Target),
+		Data: data,
 	}
 }
 
@@ -328,11 +352,17 @@ func (s ServiceBinding) RR() RR {
 		params = s.Params.String()
 	}
 
+	data := fmt.Sprintf("%d %s %s", s.Priority, s.Target, params)
+	// Make sure that the zero value is an empty string
+	if data == "0  " {
+		data = ""
+	}
+
 	return RR{
 		Name: name,
 		TTL:  s.TTL,
 		Type: recType,
-		Data: fmt.Sprintf("%d %s %s", s.Priority, s.Target, params),
+		Data: data,
 	}
 }
 
