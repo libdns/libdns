@@ -622,3 +622,40 @@ func TestRelativeRRNames(t *testing.T) {
 		}
 	}
 }
+
+func TestRRDataZeroValues(t *testing.T) {
+	for _, test := range []Record{
+		Address{
+			Name: "example.com",
+		},
+		CAA{
+			Name: "example.com",
+		},
+		CNAME{
+			Name: "example.com",
+		},
+		MX{
+			Name: "example.com",
+		},
+		NS{
+			Name: "example.com",
+		},
+		SRV{
+			Name:      "example.com",
+			Transport: "tcp",
+			Service:   "exampleservice",
+		},
+		ServiceBinding{
+			Name:   "example.com",
+			Scheme: "https",
+		},
+		TXT{
+			Name: "example.com",
+		},
+	} {
+		rr := test.RR()
+		if rr.Data != "" {
+			t.Errorf("%s: Expected empty Data, got '%s'", rr.Type, rr.Data)
+		}
+	}
+}
