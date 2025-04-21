@@ -57,7 +57,7 @@ type RR struct {
 	//
 	// Valid, but probably doesn't do what you want:
 	//   - “www.example.net” (refers to “www.example.net.example.com.”)
-	Name string
+	Name string `json:"name"`
 
 	// The time-to-live of the record. This is represented in the DNS zone file as
 	// an unsigned integral number of seconds, but is provided here as a
@@ -69,7 +69,7 @@ type RR struct {
 	// Note that some providers may reject or silently increase TTLs that are below
 	// a certain threshold, and that DNS resolvers may choose to ignore your TTL
 	// settings, so it is recommended to not rely on the exact TTL value.
-	TTL time.Duration
+	TTL time.Duration `json:"ttl"`
 
 	// The type of the record as an uppercase string. DNS provider packages are
 	// encouraged to support as many of the most common record types as possible,
@@ -77,7 +77,7 @@ type RR struct {
 	//
 	// Other custom record types may be supported with implementation-defined
 	// behavior.
-	Type string
+	Type string `json:"type"`
 
 	// The data (or "value") of the record. This field should be formatted in
 	// the *unescaped* standard zone file syntax (technically, the "RDATA" field
@@ -102,7 +102,14 @@ type RR struct {
 	//
 	// Implementations are not expected to support RFC 3597 “\#” escape
 	// sequences, but may choose to do so if they wish.
-	Data string
+	Data string `json:"data"`
+
+	// Optional data associated with the provider serving this RR.
+	// This could be the data structure the provider's API returns
+	// to represent this RR, for example. The data in this field
+	// is not cross-provider compatible and has no defined semantics.
+	// Each provider package should document if they use this field.
+	ProviderData any `json:"provider_data"`
 }
 
 // RR returns itself. This may be the case when trying to parse an RR type
