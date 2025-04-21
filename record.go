@@ -109,7 +109,7 @@ type RR struct {
 	// to represent this RR, for example. The data in this field
 	// is not cross-provider compatible and has no defined semantics.
 	// Each provider package should document if they use this field.
-	ProviderData any `json:"provider_data"`
+	ProviderData any `json:"provider_data,omitempty"`
 }
 
 // RR returns itself. This may be the case when trying to parse an RR type
