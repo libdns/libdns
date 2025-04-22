@@ -103,13 +103,6 @@ type RR struct {
 	// Implementations are not expected to support RFC 3597 “\#” escape
 	// sequences, but may choose to do so if they wish.
 	Data string `json:"data"`
-
-	// Optional data associated with the provider serving this RR.
-	// This could be the data structure the provider's API returns
-	// to represent this RR, for example. The data in this field
-	// is not cross-provider compatible and has no defined semantics.
-	// Each provider package should document if they use this field.
-	ProviderData any `json:"provider_data,omitempty"`
 }
 
 // RR returns itself. This may be the case when trying to parse an RR type

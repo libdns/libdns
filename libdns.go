@@ -19,6 +19,15 @@
 // Specific record types such as [Address], [SRV], [TXT], and others implement
 // the [Record] interface.
 //
+// Record values should not be primitvely compared (==) unless it is [RR],
+// because some struct types contain maps, for which equality is not defined;
+// additionally, some packages may attach custom data to each RR struct-type's
+// `ProviderData` field, which values might not be comparable either. The
+// `ProviderData` fields are not portable across providers, or possibly even
+// zones. Because it is not portable, and we want to ensure that [RR] structs
+// remain both portable and comparable, the `RR()` methods do not preserve
+// `ProviderData` in their return values.
+//
 // Implementations of the libdns interfaces should accept as input any [Record]
 // value, and should return as output the concrete struct types that implement
 // the [Record] interface (i.e. [Address], [TXT], [ServiceBinding], etc). This

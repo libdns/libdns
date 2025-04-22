@@ -21,6 +21,10 @@ type Address struct {
 	Name string
 	TTL  time.Duration
 	IP   netip.Addr
+
+	// Optional custom data associated with the provider serving this record.
+	// See the package godoc for important details on this field.
+	ProviderData any
 }
 
 func (a Address) RR() RR {
@@ -55,6 +59,10 @@ type CAA struct {
 	Flags uint8 // As of March 2025, the only valid values are 0 and 128.
 	Tag   string
 	Value string
+
+	// Optional custom data associated with the provider serving this record.
+	// See the package godoc for important details on this field.
+	ProviderData any
 }
 
 func (c CAA) RR() RR {
@@ -77,6 +85,10 @@ type CNAME struct {
 	Name   string
 	TTL    time.Duration
 	Target string
+
+	// Optional custom data associated with the provider serving this record.
+	// See the package godoc for important details on this field.
+	ProviderData any
 }
 
 func (c CNAME) RR() RR {
@@ -95,6 +107,10 @@ type MX struct {
 	TTL        time.Duration
 	Preference uint16 // Lower values indicate that clients should prefer this server. This field is similar to the “Priority” field in SRV records.
 	Target     string // The hostname of the mail server
+
+	// Optional custom data associated with the provider serving this record.
+	// See the package godoc for important details on this field.
+	ProviderData any
 }
 
 func (m MX) RR() RR {
@@ -127,6 +143,10 @@ type NS struct {
 	Name   string
 	TTL    time.Duration
 	Target string
+
+	// Optional custom data associated with the provider serving this record.
+	// See the package godoc for important details on this field.
+	ProviderData any
 }
 
 func (n NS) RR() RR {
@@ -169,6 +189,10 @@ type SRV struct {
 	Weight   uint16 // Higher values indicate that clients should prefer this server when choosing between targets with the same priority
 	Port     uint16 // The port on which the service is running.
 	Target   string // The hostname of the server providing the service, which must not point to a CNAME.
+
+	// Optional custom data associated with the provider serving this record.
+	// See the package godoc for important details on this field.
+	ProviderData any
 }
 
 func (s SRV) RR() RR {
@@ -322,6 +346,10 @@ type ServiceBinding struct {
 	// ignore the entire record. This is similar to the “critical” flag in CAA
 	// records.
 	Params SvcParams
+
+	// Optional custom data associated with the provider serving this record.
+	// See the package godoc for important details on this field.
+	ProviderData any
 }
 
 // RR converts the parsed record data to a generic [Record] struct.
@@ -398,6 +426,10 @@ type TXT struct {
 	// [RFC 7208 §3.3]: https://datatracker.ietf.org/doc/html/rfc7208#section-3.3
 	// [DNSControl explainer]: https://docs.dnscontrol.org/developer-info/opinions#opinion-8-txt-records-are-one-long-string
 	Text string
+
+	// Optional custom data associated with the provider serving this record.
+	// See the package godoc for important details on this field.
+	ProviderData any
 }
 
 func (t TXT) RR() RR {
