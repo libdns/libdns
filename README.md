@@ -1,4 +1,4 @@
-# Simply.Com for `libdns`
+# Simply.com for `libdns`
 
 This package implements the [libdns](https://github.com/libdns/libdns) interfaces for [Simply.com](https://www.simply.com/).
 
