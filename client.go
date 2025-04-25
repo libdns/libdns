@@ -233,15 +233,6 @@ func (c *simplyApiClient) doApiRequest(req *http.Request, result any) error {
 	}
 }
 
-// intOrZero attempts to parse a string as an integer, returning 0 if parsing fails
-/*func intOrZero(s string) int {
-	val, err := strconv.Atoi(s)
-	if err != nil {
-		return 0
-	}
-	return val
-}
-*/
 func parseError(resp *http.Response) error {
 	var errorResponse simplyResponse
 	err := json.NewDecoder(resp.Body).Decode(&errorResponse)
