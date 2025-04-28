@@ -21,10 +21,14 @@
 // because other struct types contain maps, for which equality is not defined;
 // additionally, some packages may attach custom data to each RR struct-type's
 // `ProviderData` field, whose values might not be comparable either. The
-// `ProviderData` fields are not portable across providers, or possibly even
+// `ProviderData` field is not portable across providers, or possibly even
 // zones. Because it is not portable, and we want to ensure that [RR] structs
-// remain both portable and comparable, the `RR()` methods do not preserve
-// `ProviderData` in their return values.
+// remain both portable and comparable, the `RR()` method does not preserve
+// `ProviderData` in its return value. Users of libdns packages should check
+// the documentation of provider packages, as some may use the `ProviderData`
+// field to reduce API calls / increase effiency. But implementations must
+// never rely on `ProviderData` for correctness if possible (and should
+// document clearly otherwise).
 //
 // Implementations of the libdns interfaces should accept as input any [Record]
 // value, and should return as output the concrete struct types that implement
