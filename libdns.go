@@ -191,8 +191,6 @@ type RecordSetter interface {
 	//	a.example.com. 3600 IN AAAA 2001:db8::1
 	//	a.example.com. 3600 IN AAAA 2001:db8::2
 	//	a.example.com. 3600 IN AAAA 2001:db8::5
-	//	b.example.com. 3600 IN AAAA 2001:db8::3
-	//	b.example.com. 3600 IN AAAA 2001:db8::4
 	SetRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
 }
 
