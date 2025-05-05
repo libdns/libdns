@@ -177,20 +177,22 @@ type RecordSetter interface {
 	// Example 2:
 	//
 	//	;; Original zone
-	//	a.example.com. 3600 IN AAAA 2001:db8::1
-	//	a.example.com. 3600 IN AAAA 2001:db8::2
-	//	b.example.com. 3600 IN AAAA 2001:db8::3
-	//	b.example.com. 3600 IN AAAA 2001:db8::4
+	//	alpha.example.com. 3600 IN AAAA 2001:db8::1
+	//	alpha.example.com. 3600 IN AAAA 2001:db8::2
+	//	beta.example.com.  3600 IN AAAA 2001:db8::3
+	//	beta.example.com.  3600 IN AAAA 2001:db8::4
 	//
 	//	;; Input
-	//	a.example.com. 3600 IN AAAA 2001:db8::1
-	//	a.example.com. 3600 IN AAAA 2001:db8::2
-	//	a.example.com. 3600 IN AAAA 2001:db8::5
+	//	alpha.example.com. 3600 IN AAAA 2001:db8::1
+	//	alpha.example.com. 3600 IN AAAA 2001:db8::2
+	//	alpha.example.com. 3600 IN AAAA 2001:db8::5
 	//
 	//	;; Resultant zone
-	//	a.example.com. 3600 IN AAAA 2001:db8::1
-	//	a.example.com. 3600 IN AAAA 2001:db8::2
-	//	a.example.com. 3600 IN AAAA 2001:db8::5
+	//	alpha.example.com. 3600 IN AAAA 2001:db8::1
+	//	alpha.example.com. 3600 IN AAAA 2001:db8::2
+	//	alpha.example.com. 3600 IN AAAA 2001:db8::5
+	//	beta.example.com.  3600 IN AAAA 2001:db8::3
+	//	beta.example.com.  3600 IN AAAA 2001:db8::4
 	SetRecords(ctx context.Context, zone string, recs []Record) ([]Record, error)
 }
 
