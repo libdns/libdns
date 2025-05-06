@@ -136,6 +136,18 @@ type RecordSetter interface {
 	// should not blindly call SetRecords with the output of
 	// [libdns.RecordGetter.GetRecords].
 	//
+	// If possible, implementations should make SetRecords atomic, such that if
+	// err == nil, then all of the requested changes were made, and if err != nil,
+	// then the zone remains as if the method was never called. However, as very
+	// few providers offer batch/atomic operations, the actual result of a call
+	// where err != nil is undefined. If it's possible for implementations to
+	// synthesize atomicity by transparently rolling back changes on failure,
+	// this may not always succeed, but may be attempted to try to restore zone
+	// consistency. For calls that error atomically, implementations should return
+	// AtomicErr as the error so callers may know that their zone remains in a
+	// consistent state. Implementations should document their atomicity
+	// guarantees (or lack thereof).
+	//
 	// Calls to SetRecords are presumed to be atomic; that is, if err == nil,
 	// then all of the requested changes were made; if err != nil, then none of
 	// the requested changes were made, and the zone is as if the method was
@@ -290,3 +302,9 @@ func AbsoluteName(name, zone string) string {
 	}
 	return name + "." + zone
 }
+
+// AtomicErr should be returned as the error when a method errors
+// atomically. When this error type is returned, the caller can
+// know that their zone remains in a consistent state despite an
+// error.
+type AtomicErr error
