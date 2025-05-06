@@ -136,14 +136,16 @@ type RecordSetter interface {
 	// should not blindly call SetRecords with the output of
 	// [libdns.RecordGetter.GetRecords].
 	//
-	// Calls to SetRecords are presumed to be atomic; that is, if err == nil,
-	// then all of the requested changes were made; if err != nil, then none of
-	// the requested changes were made, and the zone is as if the method was
-	// never called. Some provider APIs may not support atomic operations, so it
-	// is recommended that implementations synthesize atomicity by transparently
-	// rolling back changes on failure; if this is not possible, then it should
-	// be clearly documented that errors may result in partial changes to the
-	// zone.
+	// If possible, implementations should make SetRecords atomic, such that if
+	// err == nil, then all of the requested changes were made, and if err != nil,
+	// then the zone remains as if the method was never called. However, as very
+	// few providers offer batch/atomic operations, the actual result of a call
+	// where err != nil is undefined. Implementations may implement synthetic
+	// atomicity that rolls back partial changes on failure ONLY if it can be
+	// done reliably. For calls that error atomically, implementations should
+	// return [AtomicErr] as the error so callers may know that their zone remains
+	// in a consistent state. Implementations should document their atomicity
+	// guarantees (or lack thereof).
 	//
 	// If SetRecords is used to add a CNAME record to a name with other existing
 	// non-DNSSEC records, implementations may either fail with an error, add
@@ -290,3 +292,9 @@ func AbsoluteName(name, zone string) string {
 	}
 	return name + "." + zone
 }
+
+// AtomicErr should be returned as the error when a method errors
+// atomically. When this error type is returned, the caller can
+// know that their zone remains in a consistent state despite an
+// error.
+type AtomicErr error
