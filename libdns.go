@@ -140,12 +140,11 @@ type RecordSetter interface {
 	// err == nil, then all of the requested changes were made, and if err != nil,
 	// then the zone remains as if the method was never called. However, as very
 	// few providers offer batch/atomic operations, the actual result of a call
-	// where err != nil is undefined. If it's possible for implementations to
-	// synthesize atomicity by transparently rolling back changes on failure,
-	// this may not always succeed, but may be attempted to try to restore zone
-	// consistency. For calls that error atomically, implementations should return
-	// AtomicErr as the error so callers may know that their zone remains in a
-	// consistent state. Implementations should document their atomicity
+	// where err != nil is undefined. Implementations may implement synthetic
+	// atomicity that rolls back partial changes on failure ONLY if it can be
+	// done reliably. For calls that error atomically, implementations should
+	// return [AtomicErr] as the error so callers may know that their zone remains
+	// in a consistent state. Implementations should document their atomicity
 	// guarantees (or lack thereof).
 	//
 	// If SetRecords is used to add a CNAME record to a name with other existing
