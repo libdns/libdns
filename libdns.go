@@ -148,15 +148,6 @@ type RecordSetter interface {
 	// consistent state. Implementations should document their atomicity
 	// guarantees (or lack thereof).
 	//
-	// Calls to SetRecords are presumed to be atomic; that is, if err == nil,
-	// then all of the requested changes were made; if err != nil, then none of
-	// the requested changes were made, and the zone is as if the method was
-	// never called. Some provider APIs may not support atomic operations, so it
-	// is recommended that implementations synthesize atomicity by transparently
-	// rolling back changes on failure; if this is not possible, then it should
-	// be clearly documented that errors may result in partial changes to the
-	// zone.
-	//
 	// If SetRecords is used to add a CNAME record to a name with other existing
 	// non-DNSSEC records, implementations may either fail with an error, add
 	// the CNAME and leave the other records in place (in violation of the DNS
