@@ -74,6 +74,21 @@ func TestToCAA(t *testing.T) {
 				Value: "letsencrypt.org",
 			},
 		},
+		{
+			input: RR{
+				Name: "@",
+				TTL:  1 * time.Hour,
+				Type: "CAA",
+				Data: `0 issuewild "letsencrypt.org; validationmethods=dns-01; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/1234567890"`,
+			},
+			expect: CAA{
+				Name:  "@",
+				TTL:   1 * time.Hour,
+				Flags: 0,
+				Tag:   "issuewild",
+				Value: "letsencrypt.org; validationmethods=dns-01; accounturi=https://acme-v02.api.letsencrypt.org/acme/acct/1234567890",
+			},
+		},
 	} {
 		actual, err := test.input.toCAA()
 		if err == nil && test.shouldErr {
