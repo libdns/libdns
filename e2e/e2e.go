@@ -343,6 +343,7 @@ func (ts *TestSuite) verifyRecordsExist(t *testing.T, ctx context.Context, expec
 
 		if !found {
 			t.Errorf("Expected record not found: %s %s %s", expectedRR.Name, expectedRR.Type, expectedRR.Data)
+			ts.logAllRecords(t, allRecords)
 		}
 	}
 }
@@ -354,6 +355,7 @@ func (ts *TestSuite) verifyRecordsNotExist(t *testing.T, ctx context.Context, un
 		t.Fatalf("GetRecords (verify not exist) failed: %v", err)
 	}
 
+	foundAny := false
 	for _, unexpected := range unexpectedRecords {
 		unexpectedRR := unexpected.RR()
 
@@ -361,14 +363,28 @@ func (ts *TestSuite) verifyRecordsNotExist(t *testing.T, ctx context.Context, un
 			actualRR := actual.RR()
 			if ts.recordsMatch(unexpectedRR, actualRR) {
 				t.Errorf("Unexpected record found: %s %s %s", actualRR.Name, actualRR.Type, actualRR.Data)
+				foundAny = true
 			}
 		}
+	}
+
+	if foundAny {
+		ts.logAllRecords(t, allRecords)
 	}
 }
 
 // recordsMatch compares two RR records for equality (ignoring TTL for flexibility).
 func (ts *TestSuite) recordsMatch(a, b libdns.RR) bool {
 	return a.Name == b.Name && a.Type == b.Type && a.Data == b.Data
+}
+
+// logAllRecords logs all records in the zone for debugging purposes.
+func (ts *TestSuite) logAllRecords(t *testing.T, allRecords []libdns.Record) {
+	t.Logf("Debug: Records present in zone:")
+	for _, actual := range allRecords {
+		actualRR := actual.RR()
+		t.Logf("  - %s %s %s %s", actualRR.Name, actualRR.TTL, actualRR.Type, actualRR.Data)
+	}
 }
 
 // cleanupRecords attempts to clean up test records (best effort).
