@@ -4,7 +4,6 @@ package dummy
 import (
 	"context"
 	"fmt"
-	"net/netip"
 
 	"github.com/libdns/libdns"
 )
@@ -134,39 +133,15 @@ func (p *Provider) toConcreteType(rec libdns.Record) libdns.Record {
 	}
 
 	rr := rec.RR()
-
-	switch rr.Type {
-	case "A", "AAAA":
-		return p.rrToAddress(rr)
-
-	case "TXT":
-		return libdns.TXT{
-			Name:	rr.Name,
-			TTL:	rr.TTL,
-			Text:	rr.Data,
-		}
-
-	case "CNAME":
-		return libdns.CNAME{
-			Name:	rr.Name,
-			TTL:	rr.TTL,
-			Target:	rr.Data,
-		}
-
-	case "NS":
-		return libdns.NS{Name: rr.Name, TTL: rr.TTL, Target: rr.Data}
-	default:
-		// for simplicity, complex record types (MX, SRV, CAA, HTTPS, SVCB) return as RR
+	
+	// Use the built-in Parse method to convert RR to concrete types
+	parsed, err := rr.Parse()
+	if err != nil {
+		// If parsing fails, return the original RR
 		return rr
 	}
-}
-
-func (p *Provider) rrToAddress(rr libdns.RR) libdns.Address {
-	return libdns.Address{
-		Name:	rr.Name,
-		TTL:	rr.TTL,
-		IP:	netip.MustParseAddr(rr.Data),	// test data should always be valid
-	}
+	
+	return parsed
 }
 
 func (p *Provider) recordsMatch(existingRec, deleteRec libdns.Record) bool {
