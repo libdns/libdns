@@ -2,7 +2,9 @@ package libdns
 
 import (
 	"fmt"
+	"maps"
 	"net/netip"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +15,12 @@ import (
 // Primitive equality (“==”) between any two [Record]s is explicitly undefined;
 // if implementations need to compare records, they should either define their
 // own equality functions or compare the [RR] structs directly.
+//
+// For any given Record, libdns guarantees that calling [Record.RR()] will
+// always return the same value (i.e. it is deterministic) when using the same
+// libdns version. Similarly, libdns guarantees that [Record.RR()] and
+// [RR.Parse()] are inverses of each other, so you can safely roundtrip records
+// between [Records]s and [RR]s, provided that “ProviderData” is nil.
 type Record interface {
 	RR() RR
 }
@@ -32,7 +40,7 @@ type Record interface {
 //
 // Implementations are permitted to define their own types that implement the
 // [RR] interface, but this should only be done for provider-specific types. If
-// you're instead wanting to use a general-purpose DNS RR type that is not yet
+// you instead want to use a general-purpose DNS RR type that is not yet
 // supported by this package, please open an issue or PR to add it.
 //
 // [DNS Resource Record]: https://en.wikipedia.org/wiki/Domain_Name_System#Resource_records
@@ -369,7 +377,8 @@ type SvcParams map[string][]string
 // String serializes svcParams into zone presentation format described by RFC 9460.
 func (params SvcParams) String() string {
 	var sb strings.Builder
-	for key, vals := range params {
+	for _, key := range slices.Sorted(maps.Keys(params)) {
+		vals := params[key]
 		if sb.Len() > 0 {
 			sb.WriteRune(' ')
 		}
