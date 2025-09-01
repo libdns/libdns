@@ -66,3 +66,19 @@ records, err := provider.GetRecords(ctx, "example.com.")
 ```
 
 The dummy provider implements all libdns interfaces using in-memory storage. It's used to test the e2e framework itself and as a reference implementation.
+
+## Zone Cleanup
+
+The test suite provides a cleanup method for removing test records:
+
+```go
+suite := e2e.NewRecordTestSuite(provider, "test-zone.com.")
+
+// Clean up test records after running tests
+err := suite.AttemptZoneCleanup()
+if err != nil {
+    t.Logf("Cleanup warning: %v", err)
+}
+```
+
+**Note**: `AttemptZoneCleanup()` deletes all DNS records with names starting with "test-" from the zone. This includes any existing records that begin with "test-", not just records created by the e2e tests. Use dedicated test zones when working with real DNS providers.

@@ -46,6 +46,7 @@ package e2e
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
@@ -358,11 +359,11 @@ func (ts *TestSuite) TestSetRecords(t *testing.T) {
 
 	for _, current := range currentTestSetRecords {
 		currentRR := current.RR()
-		if currentRR.Data == "192.0.2.1" || currentRR.Data == "192.0.2.2" {
+		if currentRR.Data == initialRRs[0].Data || currentRR.Data == initialRRs[1].Data {
 			t.Errorf("Old record data still exists: %s", currentRR.Data)
 		}
-		if currentRR.Data != "192.0.2.3" {
-			t.Errorf("Expected updated record data 192.0.2.3, got %s", currentRR.Data)
+		if currentRR.Data != updatedRRs[0].Data {
+			t.Errorf("Expected updated record data %s, got %s", updatedRRs[0].Data, currentRR.Data)
 		}
 	}
 
@@ -479,9 +480,9 @@ func (ts *TestSuite) verifyRecordsNotExist(t *testing.T, ctx context.Context, un
 	}
 }
 
-// recordsMatch compares two RR records for equality (ignoring TTL for flexibility).
+// recordsMatch compares two RR records for equality
 func (ts *TestSuite) recordsMatch(a, b libdns.RR) bool {
-	return a.Name == b.Name && a.Type == b.Type && a.Data == b.Data
+	return a.Name == b.Name && a.Type == b.Type && a.Data == b.Data && a.TTL == b.TTL
 }
 
 // logAllRecords logs all records in the zone for debugging purposes.
@@ -503,4 +504,35 @@ func (ts *TestSuite) cleanupRecords(t *testing.T, ctx context.Context, records [
 	if err != nil {
 		t.Logf("Warning: cleanup failed: %v", err)
 	}
+}
+
+// AttemptZoneCleanup deletes records with names starting with "test-" from the zone.
+// This method is useful for cleaning up after test runs or preparing for fresh tests.
+// Only deletes A, CNAME, and TXT record types that match the test name pattern.
+func (ts *TestSuite) AttemptZoneCleanup() error {
+	// Record types used by the e2e tests
+	testRecordTypes := []string{"A", "CNAME", "TXT"}
+	
+	ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
+	defer cancel()
+
+	allRecords, err := ts.recordProvider.GetRecords(ctx, ts.Zone)
+	if err != nil {
+		return err
+	}
+
+	var testRecords []libdns.Record
+	for _, record := range allRecords {
+		rr := record.RR()
+		if len(rr.Name) >= 5 && rr.Name[:5] == "test-" && slices.Contains(testRecordTypes, rr.Type) {
+			testRecords = append(testRecords, record)
+		}
+	}
+
+	if len(testRecords) == 0 {
+		return nil
+	}
+
+	_, err = ts.recordProvider.DeleteRecords(ctx, ts.Zone, testRecords)
+	return err
 }
