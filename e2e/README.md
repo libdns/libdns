@@ -52,9 +52,7 @@ suite.RunTests(t)
 </dl>
 
 > [!WARNING]
-
 > When testing **real DNS providers** run the tests on dedicated test zones. **Your DNS records may be deleted or overwritten.** Even though tests use "test-" prefixed record names, bugs in the provider or test framework could cause additional data loss.
-
 > Copy this note to README file of specific providers tests.
 
 ### Zone Cleanup
