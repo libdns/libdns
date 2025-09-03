@@ -9,8 +9,8 @@ import (
 )
 
 type Provider struct {
-	zones		map[string][]libdns.Record
-	availableZones	[]string
+	zones          map[string][]libdns.Record
+	availableZones []string
 }
 
 func New(zones ...string) *Provider {
@@ -19,8 +19,8 @@ func New(zones ...string) *Provider {
 	}
 
 	p := &Provider{
-		zones:		make(map[string][]libdns.Record),
-		availableZones:	make([]string, len(zones)),
+		zones:          make(map[string][]libdns.Record),
+		availableZones: make([]string, len(zones)),
 	}
 	copy(p.availableZones, zones)
 	for _, zone := range zones {
@@ -133,14 +133,14 @@ func (p *Provider) toConcreteType(rec libdns.Record) libdns.Record {
 	}
 
 	rr := rec.RR()
-	
+
 	// Use the built-in Parse method to convert RR to concrete types
 	parsed, err := rr.Parse()
 	if err != nil {
 		// If parsing fails, return the original RR
 		return rr
 	}
-	
+
 	return parsed
 }
 

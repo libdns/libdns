@@ -9,8 +9,8 @@ import (
 
 func TestDummyProvider(t *testing.T) {
 	provider := dummy.New("example.com.")
-	testSuite := e2e.NewFullTestSuite(provider, "example.com.")
-	testSuite.RunFullTests(t)
+	testSuite := e2e.NewTestSuite(provider, "example.com.")
+	testSuite.RunTests(t)
 }
 
 func TestDummyProviderMultipleZones(t *testing.T) {
@@ -19,8 +19,8 @@ func TestDummyProviderMultipleZones(t *testing.T) {
 
 	for _, zone := range zones {
 		t.Run("Zone_"+zone, func(t *testing.T) {
-			testSuite := e2e.NewFullTestSuite(provider, zone)
-			testSuite.RunFullTests(t)
+			testSuite := e2e.NewTestSuite(provider, zone)
+			testSuite.RunTests(t)
 		})
 	}
 }

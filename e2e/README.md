@@ -2,26 +2,16 @@
 
 This package provides reusable end-to-end testing utilities for libdns provider implementations.
 
-## Provider Types
-
-Most libdns providers implement basic record operations but not `ZoneLister`. Choose the appropriate interface:
-
-- **RecordProvider**: Basic DNS record operations (most common)
-- **FullProvider**: Complete interface including `ZoneLister`
-
 ## Usage
 
 ```go
 import "github.com/libdns/libdns/e2e"
 
-// Most providers (without ZoneLister)
-suite := e2e.NewRecordTestSuite(provider, "test-zone.com.")
-suite.RunRecordTests(t)
-
-// Full providers (with ZoneLister)
-suite := e2e.NewFullTestSuite(provider, "test-zone.com.")
-suite.RunFullTests(t) // runs ListZones + all record tests
+suite := e2e.NewTestSuite(provider, "test-zone.com.")
+suite.RunTests(t)
 ```
+
+The TestSuite provides skip flags (`SkipMX`, `SkipSRV`, `SkipCAA`, `SkipNS`, `SkipSVCBHTTPS`) to exclude specific record types from testing.
 
 ## Custom Record Types
 
@@ -36,49 +26,50 @@ type MyRecord struct {
 func (r MyRecord) RR() libdns.RR { return r.RR }
 
 // Configure custom record constructor
-suite := e2e.NewRecordTestSuite(provider, "test-zone.com.")
-suite.AppendRecordFunc = func(rr libdns.RR) libdns.Record {
+suite := e2e.NewTestSuite(provider, "test-zone.com.")
+suite.AppendRecordFunc = func(record libdns.Record) libdns.Record {
     return MyRecord{
-        RR:    rr,
+        RR:    record.RR(),
         Extra: "pretty please", // Provider-specific data
     }
 }
-suite.RunRecordTests(t)
+suite.RunTests(t)
 ```
 
 ## Test Coverage
 
-- **ListZones**: Lists available zones (FullProvider only)
-- **GetRecords**: Retrieves records from a zone  
-- **AppendRecords**: Creates new records (uses `test-append*` names)
-- **SetRecords**: Creates/updates/deletes records by (name,type), preserves unrelated records (uses `test-set*` names)
-- **DeleteRecords**: Creates then deletes records (uses `test-delete*` names) 
+<dl>
+<dt>ListZones</dt>
+<dd>Lists available zones (requires ZoneLister interface)</dd>
+<dt>GetRecords</dt>
+<dd>Retrieves records from a zone</dd>
+<dt>AppendRecords</dt>
+<dd>Creates new records (uses <code>test-append*</code> names)</dd>
+<dt>SetRecords</dt>
+<dd>Creates/updates/deletes records by (name,type), preserves unrelated records (uses <code>test-set*</code> names)</dd>
+<dt>DeleteRecords</dt>
+<dd>Creates then deletes records (uses <code>test-delete*</code> names)</dd>
+</dl>
 
-For **real DNS providers**, use dedicated test zones since tests create/modify/delete DNS records.
+> [!WARNING]
+
+> When testing **real DNS providers** run the tests on dedicated test zones. **Your DNS records may be deleted or overwritten.** Even though tests use "test-" prefixed record names, bugs in the provider or test framework could cause additional data loss.
+
+> Copy this note to README file of specific providers tests.
+
+### Zone Cleanup
+
+The test suite automatically cleans up test records using `AttemptZoneCleanup()` before all tests and after each individual test. This method deletes all DNS records with names starting with "test-" from the zone.
+
+**Use dedicated test zones when working with real DNS providers.**
 
 ## Dummy Provider
 
 ```go
 import "github.com/libdns/libdns/e2e/dummy"
 
-provider := dummy.New("example.com.")  
+provider := dummy.New("example.com.")
 records, err := provider.GetRecords(ctx, "example.com.")
 ```
 
-The dummy provider implements all libdns interfaces using in-memory storage. It's used to test the e2e framework itself and as a reference implementation.
-
-## Zone Cleanup
-
-The test suite provides a cleanup method for removing test records:
-
-```go
-suite := e2e.NewRecordTestSuite(provider, "test-zone.com.")
-
-// Clean up test records after running tests
-err := suite.AttemptZoneCleanup()
-if err != nil {
-    t.Logf("Cleanup warning: %v", err)
-}
-```
-
-**Note**: `AttemptZoneCleanup()` deletes all DNS records with names starting with "test-" from the zone. This includes any existing records that begin with "test-", not just records created by the e2e tests. Use dedicated test zones when working with real DNS providers.
+The dummy provider implements all libdns interfaces using in-memory storage. It serves as a double-entry system to ensure there is some implementation that can pass these tests. The dummy provider does not guarantee DNS compliance, but works for the currently defined tests.

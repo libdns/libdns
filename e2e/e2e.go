@@ -9,23 +9,10 @@
 // Tests run sequentially (not in parallel) to avoid conflicts when testing real
 // DNS providers that interact with external services.
 //
-// # Provider Types
+// # Usage
 //
-// Most libdns providers implement the basic record operations but not ZoneLister.
-// This package provides two interfaces and corresponding test functions:
-//
-// - RecordProvider: For providers that implement basic DNS record operations
-// - FullProvider: For providers that also implement ZoneLister
-//
-// Use the appropriate constructor and test runner:
-//
-//	// For basic providers (most common)
-//	suite := e2e.NewRecordTestSuite(yourProvider, "test-zone.com.")
-//	suite.RunRecordTests(t)
-//
-//	// For providers with ZoneLister support
-//	suite := e2e.NewFullTestSuite(yourProvider, "test-zone.com.")
-//	suite.RunFullTests(t) // runs ZoneLister test + all record tests
+//	suite := e2e.NewTestSuite(yourProvider, "test-zone.com.")
+//	suite.RunTests(t)
 //
 // # Custom Record Construction
 //
@@ -34,10 +21,10 @@
 // The TestSuite.AppendRecordFunc field allows you to provide a custom function
 // to create Record instances for AppendRecords tests:
 //
-//	suite := e2e.NewRecordTestSuite(yourProvider, "test-zone.com.")
-//	suite.AppendRecordFunc = func(rr libdns.RR) libdns.Record {
+//	suite := e2e.NewTestSuite(yourProvider, "test-zone.com.")
+//	suite.AppendRecordFunc = func(record libdns.Record) libdns.Record {
 //		// Return your provider's specific Record implementation
-//		return yourProvider.NewRecord(rr)
+//		return yourProvider.NewRecord(record.RR())
 //	}
 //
 // For Set and Delete operations, the tests automatically retrieve existing records
@@ -46,93 +33,115 @@ package e2e
 
 import (
 	"context"
+	"net/netip"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/libdns/libdns"
 )
 
-// RecordProvider represents a basic libdns provider that handles DNS records.
-// This is the most common type of provider implementation.
-type RecordProvider interface {
+// Provider represents a libdns provider implementation for testing.
+type Provider interface {
 	libdns.RecordGetter
 	libdns.RecordAppender
 	libdns.RecordSetter
 	libdns.RecordDeleter
-}
-
-// FullProvider represents a complete libdns provider implementation for testing.
-// It combines all the libdns interfaces that a provider might implement.
-type FullProvider interface {
-	RecordProvider
 	libdns.ZoneLister
 }
 
 // TestSuite contains all the configuration needed to run e2e tests.
 type TestSuite struct {
-	recordProvider RecordProvider
-	fullProvider   FullProvider
-	Zone           string
-	Timeout        time.Duration
+	provider Provider
+	zone     string
+	Timeout  time.Duration
 	// AppendRecordFunc is an optional function to create Record instances for AppendRecords tests.
 	// if nil, the tests will use the default libdns record types.
-	// the function receives an RR and should return a Record implementation.
-	AppendRecordFunc func(rr libdns.RR) libdns.Record
+	// the function receives a Record and should return a Record implementation.
+	AppendRecordFunc func(record libdns.Record) libdns.Record
+	// SkipMX when true, MX records will not be included in tests.
+	SkipMX bool
+	// SkipSRV when true, SRV records will not be included in tests.
+	SkipSRV bool
+	// SkipCAA when true, CAA records will not be included in tests.
+	SkipCAA bool
+	// SkipNS when true, NS records will not be included in tests.
+	SkipNS bool
+	// SkipSVCBHTTPS when true, SVCB and HTTPS records will not be included in tests.
+	SkipSVCBHTTPS bool
 }
 
-// NewRecordTestSuite creates a new test suite for a record-only provider.
-func NewRecordTestSuite(provider RecordProvider, zone string) *TestSuite {
+// NewTestSuite creates a new test suite for a libdns provider.
+func NewTestSuite(provider Provider, zone string) *TestSuite {
 	return &TestSuite{
-		recordProvider:   provider,
-		fullProvider:     nil,
-		Zone:             zone,
+		provider:         provider,
+		zone:             zone,
 		Timeout:          30 * time.Second,
 		AppendRecordFunc: nil,
 	}
 }
 
-// NewFullTestSuite creates a new test suite for a full provider (with ZoneLister).
-func NewFullTestSuite(provider FullProvider, zone string) *TestSuite {
-	return &TestSuite{
-		recordProvider:   provider,
-		fullProvider:     provider,
-		Zone:             zone,
-		Timeout:          30 * time.Second,
-		AppendRecordFunc: nil,
+// RunTests does zone cleanup and runs all tests
+func (ts *TestSuite) RunTests(t *testing.T) {
+	if err := ts.AttemptZoneCleanup(); err != nil {
+		t.Fatalf("Initial cleanup failed: %v", err)
 	}
-}
 
-// RunRecordTests runs the record-only e2e test suite sequentially.
-// This is suitable for providers that implement RecordProvider but not ZoneLister.
-func (ts *TestSuite) RunRecordTests(t *testing.T) {
+	t.Run("ListZones", ts.TestListZones)
 	t.Run("GetRecords", ts.TestGetRecords)
 	t.Run("AppendRecords", ts.TestAppendRecords)
 	t.Run("SetRecords", ts.TestSetRecords)
 	t.Run("DeleteRecords", ts.TestDeleteRecords)
 }
 
-// RunFullTests runs the complete e2e test suite sequentially, including ZoneLister tests.
-// This is suitable for providers that implement FullProvider.
-func (ts *TestSuite) RunFullTests(t *testing.T) {
-	t.Run("ListZones", ts.TestListZones)
-	ts.RunRecordTests(t)
-}
-
-// createRecord creates a Record from an RR, using the AppendRecordFunc if provided,
-// or falling back to the generic libdns.RR record type.
-func (ts *TestSuite) createRecord(rr libdns.RR) libdns.Record {
+// createRecord creates a Record using the AppendRecordFunc if provided,
+// or falling back to the original record.
+func (ts *TestSuite) createRecord(record libdns.Record) libdns.Record {
 	if ts.AppendRecordFunc != nil {
-		return ts.AppendRecordFunc(rr)
+		return ts.AppendRecordFunc(record)
 	}
 
-	return libdns.RR{Name: rr.Name, TTL: rr.TTL, Type: rr.Type, Data: rr.Data}
+	return record
+}
+
+// filterRecords removes records based on skip flags.
+func (ts *TestSuite) filterRecords(records []libdns.Record) []libdns.Record {
+	var filtered []libdns.Record
+
+	for _, record := range records {
+		switch record.(type) {
+		case libdns.MX:
+			if ts.SkipMX {
+				continue
+			}
+		case libdns.SRV:
+			if ts.SkipSRV {
+				continue
+			}
+		case libdns.CAA:
+			if ts.SkipCAA {
+				continue
+			}
+		case libdns.NS:
+			if ts.SkipNS {
+				continue
+			}
+		case libdns.ServiceBinding:
+			if ts.SkipSVCBHTTPS {
+				continue
+			}
+		}
+		filtered = append(filtered, record)
+	}
+
+	return filtered
 }
 
 // findRecordsByNameAndType finds all records from the provider that match the given name and type.
 // This is used to get provider-specific Record implementations for Set and Delete operations.
 func (ts *TestSuite) findRecordsByNameAndType(ctx context.Context, name, recordType string) ([]libdns.Record, error) {
-	allRecords, err := ts.recordProvider.GetRecords(ctx, ts.Zone)
+	allRecords, err := ts.provider.GetRecords(ctx, ts.zone)
 	if err != nil {
 		return nil, err
 	}
@@ -150,14 +159,10 @@ func (ts *TestSuite) findRecordsByNameAndType(ctx context.Context, name, recordT
 
 // TestListZones tests the ZoneLister interface.
 func (ts *TestSuite) TestListZones(t *testing.T) {
-	if ts.fullProvider == nil {
-		t.Skip("ZoneLister not supported by this provider")
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
 	defer cancel()
 
-	zones, err := ts.fullProvider.ListZones(ctx)
+	zones, err := ts.provider.ListZones(ctx)
 	if err != nil {
 		t.Fatalf("ListZones failed: %v", err)
 	}
@@ -171,13 +176,13 @@ func (ts *TestSuite) TestListZones(t *testing.T) {
 			t.Error("Zone name should not be empty")
 		}
 		t.Logf("Zone: %s", zone.Name)
-		if zone.Name == ts.Zone {
+		if zone.Name == ts.zone {
 			testZoneFound = true
 		}
 	}
 
 	if !testZoneFound {
-		t.Errorf("Test zone %s not found in ListZones result", ts.Zone)
+		t.Errorf("Test zone %s not found in ListZones result", ts.zone)
 	}
 }
 
@@ -186,12 +191,12 @@ func (ts *TestSuite) TestGetRecords(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
 	defer cancel()
 
-	records, err := ts.recordProvider.GetRecords(ctx, ts.Zone)
+	records, err := ts.provider.GetRecords(ctx, ts.zone)
 	if err != nil {
 		t.Fatalf("GetRecords failed: %v", err)
 	}
 
-	t.Logf("Found %d records in zone %s", len(records), ts.Zone)
+	t.Logf("Found %d records in zone %s", len(records), ts.zone)
 	for _, record := range records {
 		rr := record.RR()
 		if rr.Name == "" {
@@ -209,35 +214,102 @@ func (ts *TestSuite) TestAppendRecords(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
 	defer cancel()
 
+	t.Cleanup(func() {
+		if err := ts.AttemptZoneCleanup(); err != nil {
+			t.Logf("Warning: cleanup after AppendRecords failed: %v", err)
+		}
+	})
+
 	t.Log("Creating test records for append operation")
-	testRRs := []libdns.RR{
-		{
-			Name: "test-append",
+
+	targetRecords := []libdns.Record{
+		libdns.Address{
+			Name: "test-append-address",
 			TTL:  300 * time.Second,
-			Type: "A",
-			Data: "192.0.2.1",
+			IP:   netip.MustParseAddr("192.0.2.1"),
 		},
-		{
+		libdns.Address{
+			Name: "test-append-address",
+			TTL:  300 * time.Second,
+			IP:   netip.MustParseAddr("192.0.2.2"),
+		},
+		libdns.Address{
+			Name: "test-append-address-ipv6",
+			TTL:  300 * time.Second,
+			IP:   netip.MustParseAddr("2001:db8::1"),
+		},
+		libdns.CAA{
+			Name:  "test-append-caa",
+			TTL:   300 * time.Second,
+			Flags: 0,
+			Tag:   "issue",
+			Value: "letsencrypt.org",
+		},
+		libdns.CNAME{
+			Name:   "test-append-cname",
+			TTL:    300 * time.Second,
+			Target: "example.com.",
+		},
+		libdns.ServiceBinding{
+			Name:     "test-append-https",
+			TTL:      300 * time.Second,
+			Scheme:   "https",
+			Priority: 1,
+			Target:   "test-append-address." + ts.zone,
+			Params: libdns.SvcParams{
+				"alpn":     {"h2", "h3"},
+				"ipv4hint": {"192.0.2.1", "192.0.2.2"},
+				"ipv6hint": {"2001:db8::1"},
+				"port":     {"443"},
+			},
+		},
+		libdns.MX{
+			Name:       "test-append-mx",
+			TTL:        300 * time.Second,
+			Preference: 10,
+			Target:     "mx.example.com.",
+		},
+		libdns.NS{
+			Name:   "test-append-ns",
+			TTL:    300 * time.Second,
+			Target: "ns1.example.com.",
+		},
+		libdns.SRV{
+			Name:      "test-append-srv",
+			Service:   "exampleservice",
+			Transport: "tcp",
+			TTL:       300 * time.Second,
+			Priority:  10,
+			Weight:    20,
+			Port:      443,
+			Target:    "service.example.com.",
+		},
+		libdns.ServiceBinding{
+			Name:     "test-append-svcb",
+			TTL:      300 * time.Second,
+			Scheme:   "dns",
+			Priority: 1,
+			Target:   ".",
+			Params: libdns.SvcParams{
+				"alpn": {"dot"},
+			},
+		},
+		libdns.TXT{
 			Name: "test-append-txt",
 			TTL:  300 * time.Second,
-			Type: "TXT",
-			Data: "test-append-value",
-		},
-		{
-			Name: "test-append-cname",
-			TTL:  300 * time.Second,
-			Type: "CNAME",
-			Data: "target.example.com.",
+			Text: "Hello, world!",
 		},
 	}
 
+	filteredTargetRecords := ts.filterRecords(targetRecords)
+
 	var testRecords []libdns.Record
-	for _, rr := range testRRs {
-		testRecords = append(testRecords, ts.createRecord(rr))
+	for _, record := range filteredTargetRecords {
+		testRecords = append(testRecords, ts.createRecord(record))
 	}
 
 	t.Logf("Appending %d new records", len(testRecords))
-	appendedRecords, err := ts.recordProvider.AppendRecords(ctx, ts.Zone, testRecords)
+	appendedRecords, err := ts.provider.AppendRecords(ctx, ts.zone, testRecords)
 	if err != nil {
 		t.Fatalf("AppendRecords failed: %v", err)
 	}
@@ -249,9 +321,6 @@ func (ts *TestSuite) TestAppendRecords(t *testing.T) {
 
 	t.Log("Verifying appended records exist in zone")
 	ts.verifyRecordsExist(t, ctx, testRecords)
-
-	t.Log("Cleaning up appended records")
-	ts.cleanupRecords(t, ctx, appendedRecords)
 }
 
 // TestSetRecords tests the RecordSetter interface.
@@ -260,6 +329,12 @@ func (ts *TestSuite) TestAppendRecords(t *testing.T) {
 func (ts *TestSuite) TestSetRecords(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
 	defer cancel()
+
+	t.Cleanup(func() {
+		if err := ts.AttemptZoneCleanup(); err != nil {
+			t.Logf("Warning: cleanup after SetRecords failed: %v", err)
+		}
+	})
 
 	t.Log("Creating preserved record that should not be affected by SetRecords")
 	preservedRR := libdns.RR{
@@ -270,40 +345,57 @@ func (ts *TestSuite) TestSetRecords(t *testing.T) {
 	}
 	preservedRecord := ts.createRecord(preservedRR)
 
-	preservedRecords, err := ts.recordProvider.AppendRecords(ctx, ts.Zone, []libdns.Record{preservedRecord})
+	_, err := ts.provider.AppendRecords(ctx, ts.zone, []libdns.Record{preservedRecord})
 	if err != nil {
 		t.Fatalf("Failed to create preserved record: %v", err)
 	}
 	t.Logf("Created preserved record: %s", preservedRecord.RR().Name)
 
-	initialRRs := []libdns.RR{
-		{
-			Name: "test-set",
+	initialTargetRecords := []libdns.Record{
+		libdns.Address{
+			Name: "test-set-address",
 			TTL:  300 * time.Second,
-			Type: "A",
-			Data: "192.0.2.1",
+			IP:   netip.MustParseAddr("192.0.2.1"),
 		},
-		{
-			Name: "test-set",
+		libdns.Address{
+			Name: "test-set-address",
 			TTL:  300 * time.Second,
-			Type: "A",
-			Data: "192.0.2.2",
+			IP:   netip.MustParseAddr("192.0.2.2"),
 		},
-		{
-			Name: "test-set-cname",
+		libdns.CAA{
+			Name:  "test-set-caa",
+			TTL:   300 * time.Second,
+			Flags: 128,
+			Tag:   "issue",
+			Value: "initial.example.com",
+		},
+		libdns.CNAME{
+			Name:   "test-set-cname",
+			TTL:    300 * time.Second,
+			Target: "initial.example.com.",
+		},
+		libdns.MX{
+			Name:       "test-set-mx",
+			TTL:        300 * time.Second,
+			Preference: 10,
+			Target:     "initial-mx.example.com.",
+		},
+		libdns.TXT{
+			Name: "test-set-txt",
 			TTL:  300 * time.Second,
-			Type: "CNAME",
-			Data: "initial.example.com.",
+			Text: "initial value",
 		},
 	}
+
+	filteredInitialRecords := ts.filterRecords(initialTargetRecords)
 
 	var initialRecords []libdns.Record
-	for _, rr := range initialRRs {
-		initialRecords = append(initialRecords, ts.createRecord(rr))
+	for _, record := range filteredInitialRecords {
+		initialRecords = append(initialRecords, ts.createRecord(record))
 	}
 
-	t.Logf("Setting initial records: 2 A records for 'test-set' and 1 CNAME")
-	setRecords, err := ts.recordProvider.SetRecords(ctx, ts.Zone, initialRecords)
+	t.Logf("Setting initial records: %d records of various types", len(initialRecords))
+	setRecords, err := ts.provider.SetRecords(ctx, ts.zone, initialRecords)
 	if err != nil {
 		t.Fatalf("SetRecords (initial) failed: %v", err)
 	}
@@ -316,28 +408,56 @@ func (ts *TestSuite) TestSetRecords(t *testing.T) {
 	t.Log("Verifying preserved record still exists")
 	ts.verifyRecordsExist(t, ctx, []libdns.Record{preservedRecord})
 
-	updatedRRs := []libdns.RR{
-		{
-			Name: "test-set",
+	updatedTargetRecords := []libdns.Record{
+		libdns.Address{
+			Name: "test-set-address",
 			TTL:  600 * time.Second,
-			Type: "A",
-			Data: "192.0.2.3",
+			IP:   netip.MustParseAddr("192.0.2.3"),
 		},
-		{
-			Name: "test-set-cname",
+		libdns.CAA{
+			Name:  "test-set-caa",
+			TTL:   600 * time.Second,
+			Flags: 0,
+			Tag:   "issue",
+			Value: "updated.example.com",
+		},
+		libdns.CNAME{
+			Name:   "test-set-cname",
+			TTL:    600 * time.Second,
+			Target: "updated.example.com.",
+		},
+		libdns.MX{
+			Name:       "test-set-mx",
+			TTL:        600 * time.Second,
+			Preference: 20,
+			Target:     "updated-mx.example.com.",
+		},
+		libdns.TXT{
+			Name: "test-set-txt",
 			TTL:  600 * time.Second,
-			Type: "CNAME",
-			Data: "updated.example.com.",
+			Text: "updated value",
+		},
+		libdns.SRV{
+			Name:      "test-set-srv",
+			Service:   "newservice",
+			Transport: "tcp",
+			TTL:       600 * time.Second,
+			Priority:  5,
+			Weight:    10,
+			Port:      80,
+			Target:    "updated.example.com.",
 		},
 	}
+
+	filteredUpdatedRecords := ts.filterRecords(updatedTargetRecords)
 
 	var updatedRecords []libdns.Record
-	for _, rr := range updatedRRs {
-		updatedRecords = append(updatedRecords, ts.createRecord(rr))
+	for _, record := range filteredUpdatedRecords {
+		updatedRecords = append(updatedRecords, ts.createRecord(record))
 	}
 
-	t.Logf("Updating records: replacing 2 A records with 1 A record, updating CNAME")
-	setRecords, err = ts.recordProvider.SetRecords(ctx, ts.Zone, updatedRecords)
+	t.Logf("Updating records: modifying existing records and adding new ones")
+	setRecords, err = ts.provider.SetRecords(ctx, ts.zone, updatedRecords)
 	if err != nil {
 		t.Fatalf("SetRecords (update) failed: %v", err)
 	}
@@ -350,29 +470,31 @@ func (ts *TestSuite) TestSetRecords(t *testing.T) {
 	t.Log("Verifying updated records exist")
 	ts.verifyRecordsExist(t, ctx, updatedRecords)
 
-	// verify the old records no longer exist (by checking they don't match the updated records)
-	t.Log("Verifying old records were replaced (SetRecords atomicity)")
-	currentTestSetRecords, err := ts.findRecordsByNameAndType(ctx, "test-set", "A")
+	t.Log("Verifying old records were replaced")
+	currentSetAddressRecords, err := ts.findRecordsByNameAndType(ctx, "test-set-address", "A")
 	if err != nil {
-		t.Fatalf("Failed to find current test-set A records: %v", err)
+		t.Fatalf("Failed to find current test-set-address A records: %v", err)
 	}
 
-	for _, current := range currentTestSetRecords {
+	if len(currentSetAddressRecords) != 1 {
+		t.Errorf("Expected 1 address record after update, got %d", len(currentSetAddressRecords))
+	}
+	initialIP1 := initialTargetRecords[0].(libdns.Address).IP.String()
+	initialIP2 := initialTargetRecords[1].(libdns.Address).IP.String()
+	updatedIP := updatedTargetRecords[0].(libdns.Address).IP.String()
+
+	for _, current := range currentSetAddressRecords {
 		currentRR := current.RR()
-		if currentRR.Data == initialRRs[0].Data || currentRR.Data == initialRRs[1].Data {
+		if currentRR.Data == initialIP1 || currentRR.Data == initialIP2 {
 			t.Errorf("Old record data still exists: %s", currentRR.Data)
 		}
-		if currentRR.Data != updatedRRs[0].Data {
-			t.Errorf("Expected updated record data %s, got %s", updatedRRs[0].Data, currentRR.Data)
+		if currentRR.Data != updatedIP {
+			t.Errorf("Expected updated record data %s, got %s", updatedIP, currentRR.Data)
 		}
 	}
 
 	t.Log("Verifying preserved record was not affected")
 	ts.verifyRecordsExist(t, ctx, []libdns.Record{preservedRecord})
-
-	t.Log("Cleaning up test records")
-	ts.cleanupRecords(t, ctx, setRecords)
-	ts.cleanupRecords(t, ctx, preservedRecords)
 }
 
 // TestDeleteRecords tests the RecordDeleter interface.
@@ -380,42 +502,98 @@ func (ts *TestSuite) TestDeleteRecords(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
 	defer cancel()
 
+	t.Cleanup(func() {
+		if err := ts.AttemptZoneCleanup(); err != nil {
+			t.Logf("Warning: cleanup after DeleteRecords failed: %v", err)
+		}
+	})
+
 	t.Log("Creating test records for deletion")
-	testRRs := []libdns.RR{
-		{
-			Name: "test-delete",
+
+	targetRecords := []libdns.Record{
+		libdns.Address{
+			Name: "test-delete-address",
 			TTL:  300 * time.Second,
-			Type: "A",
-			Data: "192.0.2.1",
+			IP:   netip.MustParseAddr("192.0.2.1"),
 		},
-		{
+		libdns.Address{
+			Name: "test-delete-address-ipv6",
+			TTL:  300 * time.Second,
+			IP:   netip.MustParseAddr("2001:db8::1"),
+		},
+		libdns.CAA{
+			Name:  "test-delete-caa",
+			TTL:   300 * time.Second,
+			Flags: 0,
+			Tag:   "issue",
+			Value: "ca.example.com",
+		},
+		libdns.CNAME{
+			Name:   "test-delete-cname",
+			TTL:    300 * time.Second,
+			Target: "test-delete-target." + ts.zone,
+		},
+		libdns.SRV{
+			Service:   "service",
+			Transport: "tcp",
+			Name:      "test-delete-srv",
+			TTL:       300 * time.Second,
+			Priority:  10,
+			Weight:    20,
+			Port:      80,
+			Target:    "test-delete-srv-target." + ts.zone,
+		},
+		libdns.MX{
+			Name:       "test-delete-mx",
+			TTL:        300 * time.Second,
+			Preference: 10,
+			Target:     "test-delete-mx-target." + ts.zone,
+		},
+		libdns.NS{
+			Name:   "test-delete-ns",
+			TTL:    300 * time.Second,
+			Target: "test-delete-ns-target." + ts.zone,
+		},
+		libdns.TXT{
 			Name: "test-delete-txt",
 			TTL:  300 * time.Second,
-			Type: "TXT",
-			Data: "test-delete-value",
+			Text: "test-delete-value",
 		},
-		{
-			Name: "test-delete-cname",
-			TTL:  300 * time.Second,
-			Type: "CNAME",
-			Data: "target.example.com.",
+		libdns.ServiceBinding{
+			Scheme:        "https",
+			URLSchemePort: 443,
+			Name:          "test-delete-https",
+			TTL:           300 * time.Second,
+			Priority:      1,
+			Target:        "test-delete-https-target." + ts.zone,
+			Params:        libdns.SvcParams{"alpn": {"h2", "h3"}},
+		},
+		libdns.ServiceBinding{
+			Scheme:   "service",
+			Name:     "test-delete-svcb",
+			TTL:      300 * time.Second,
+			Priority: 1,
+			Target:   "test-delete-svcb-target." + ts.zone,
+			Params:   libdns.SvcParams{"port": {"443"}},
 		},
 	}
 
+	filteredTargetRecords := ts.filterRecords(targetRecords)
+
 	var testRecords []libdns.Record
-	for _, rr := range testRRs {
-		testRecords = append(testRecords, ts.createRecord(rr))
+	for _, record := range filteredTargetRecords {
+		testRecords = append(testRecords, ts.createRecord(record))
 	}
 
 	t.Logf("Creating %d records to be deleted later", len(testRecords))
-	createdRecords, err := ts.recordProvider.AppendRecords(ctx, ts.Zone, testRecords)
+	createdRecords, err := ts.provider.AppendRecords(ctx, ts.zone, testRecords)
 	if err != nil {
 		t.Fatalf("AppendRecords (for delete test) failed: %v", err)
 	}
 	t.Logf("Created %d records successfully", len(createdRecords))
 
 	t.Log("Deleting the created records")
-	deletedRecords, err := ts.recordProvider.DeleteRecords(ctx, ts.Zone, createdRecords)
+	deletedRecords, err := ts.provider.DeleteRecords(ctx, ts.zone, createdRecords)
 	if err != nil {
 		t.Fatalf("DeleteRecords failed: %v", err)
 	}
@@ -429,9 +607,28 @@ func (ts *TestSuite) TestDeleteRecords(t *testing.T) {
 	ts.verifyRecordsNotExist(t, ctx, deletedRecords)
 }
 
+// recordsMatch compares two RR structs by parsing and normalizing them.
+// This ensures consistent comparison by round-tripping through the libdns parsing logic.
+func (ts *TestSuite) recordsMatch(t *testing.T, expected, actual libdns.RR) bool {
+	expectedRecord, err := expected.Parse()
+	if err != nil {
+		t.Fatalf("Failed to parse expected record %s %s %s: %v", expected.Name, expected.Type, expected.Data, err)
+	}
+
+	actualRecord, err := actual.Parse()
+	if err != nil {
+		t.Fatalf("Failed to parse actual record %s %s %s: %v", actual.Name, actual.Type, actual.Data, err)
+	}
+
+	normalizedExpected := expectedRecord.RR()
+	normalizedActual := actualRecord.RR()
+
+	return normalizedExpected == normalizedActual
+}
+
 // verifyRecordsExist checks that all given records exist in the zone.
 func (ts *TestSuite) verifyRecordsExist(t *testing.T, ctx context.Context, expectedRecords []libdns.Record) {
-	allRecords, err := ts.recordProvider.GetRecords(ctx, ts.Zone)
+	allRecords, err := ts.provider.GetRecords(ctx, ts.zone)
 	if err != nil {
 		t.Fatalf("GetRecords (verify exist) failed: %v", err)
 	}
@@ -442,14 +639,14 @@ func (ts *TestSuite) verifyRecordsExist(t *testing.T, ctx context.Context, expec
 
 		for _, actual := range allRecords {
 			actualRR := actual.RR()
-			if ts.recordsMatch(expectedRR, actualRR) {
+			if ts.recordsMatch(t, expectedRR, actualRR) {
 				found = true
 				break
 			}
 		}
 
 		if !found {
-			t.Errorf("Expected record not found: %s %s %s", expectedRR.Name, expectedRR.Type, expectedRR.Data)
+			t.Errorf("Expected record not found: %+v", expectedRR)
 			ts.logAllRecords(t, allRecords)
 		}
 	}
@@ -457,7 +654,7 @@ func (ts *TestSuite) verifyRecordsExist(t *testing.T, ctx context.Context, expec
 
 // verifyRecordsNotExist checks that none of the given records exist in the zone.
 func (ts *TestSuite) verifyRecordsNotExist(t *testing.T, ctx context.Context, unexpectedRecords []libdns.Record) {
-	allRecords, err := ts.recordProvider.GetRecords(ctx, ts.Zone)
+	allRecords, err := ts.provider.GetRecords(ctx, ts.zone)
 	if err != nil {
 		t.Fatalf("GetRecords (verify not exist) failed: %v", err)
 	}
@@ -468,7 +665,7 @@ func (ts *TestSuite) verifyRecordsNotExist(t *testing.T, ctx context.Context, un
 
 		for _, actual := range allRecords {
 			actualRR := actual.RR()
-			if ts.recordsMatch(unexpectedRR, actualRR) {
+			if ts.recordsMatch(t, unexpectedRR, actualRR) {
 				t.Errorf("Unexpected record found: %s %s %s", actualRR.Name, actualRR.Type, actualRR.Data)
 				foundAny = true
 			}
@@ -480,11 +677,6 @@ func (ts *TestSuite) verifyRecordsNotExist(t *testing.T, ctx context.Context, un
 	}
 }
 
-// recordsMatch compares two RR records for equality
-func (ts *TestSuite) recordsMatch(a, b libdns.RR) bool {
-	return a.Name == b.Name && a.Type == b.Type && a.Data == b.Data && a.TTL == b.TTL
-}
-
 // logAllRecords logs all records in the zone for debugging purposes.
 func (ts *TestSuite) logAllRecords(t *testing.T, allRecords []libdns.Record) {
 	t.Logf("Debug: Records present in zone:")
@@ -494,29 +686,36 @@ func (ts *TestSuite) logAllRecords(t *testing.T, allRecords []libdns.Record) {
 	}
 }
 
-// cleanupRecords attempts to clean up test records (best effort).
-func (ts *TestSuite) cleanupRecords(t *testing.T, ctx context.Context, records []libdns.Record) {
-	if len(records) == 0 {
-		return
-	}
-
-	_, err := ts.recordProvider.DeleteRecords(ctx, ts.Zone, records)
-	if err != nil {
-		t.Logf("Warning: cleanup failed: %v", err)
-	}
-}
-
 // AttemptZoneCleanup deletes records with names starting with "test-" from the zone.
 // This method is useful for cleaning up after test runs or preparing for fresh tests.
-// Only deletes A, CNAME, and TXT record types that match the test name pattern.
+// Deletes all record types that match the test name pattern.
 func (ts *TestSuite) AttemptZoneCleanup() error {
-	// Record types used by the e2e tests
-	testRecordTypes := []string{"A", "CNAME", "TXT"}
-	
+	testRecordTypes := []string{"A", "AAAA", "CNAME", "TXT"}
+
+	if !ts.SkipMX {
+		testRecordTypes = append(testRecordTypes, "MX")
+	}
+
+	if !ts.SkipSRV {
+		testRecordTypes = append(testRecordTypes, "SRV")
+	}
+
+	if !ts.SkipCAA {
+		testRecordTypes = append(testRecordTypes, "CAA")
+	}
+
+	if !ts.SkipNS {
+		testRecordTypes = append(testRecordTypes, "NS")
+	}
+
+	if !ts.SkipSVCBHTTPS {
+		testRecordTypes = append(testRecordTypes, "SVCB", "HTTPS")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
 	defer cancel()
 
-	allRecords, err := ts.recordProvider.GetRecords(ctx, ts.Zone)
+	allRecords, err := ts.provider.GetRecords(ctx, ts.zone)
 	if err != nil {
 		return err
 	}
@@ -524,7 +723,7 @@ func (ts *TestSuite) AttemptZoneCleanup() error {
 	var testRecords []libdns.Record
 	for _, record := range allRecords {
 		rr := record.RR()
-		if len(rr.Name) >= 5 && rr.Name[:5] == "test-" && slices.Contains(testRecordTypes, rr.Type) {
+		if strings.HasPrefix(rr.Name, "test-") && slices.Contains(testRecordTypes, rr.Type) {
 			testRecords = append(testRecords, record)
 		}
 	}
@@ -533,6 +732,6 @@ func (ts *TestSuite) AttemptZoneCleanup() error {
 		return nil
 	}
 
-	_, err = ts.recordProvider.DeleteRecords(ctx, ts.Zone, testRecords)
+	_, err = ts.provider.DeleteRecords(ctx, ts.zone, testRecords)
 	return err
 }
