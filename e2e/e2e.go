@@ -14,6 +14,15 @@
 //	suite := e2e.NewTestSuite(yourProvider, "test-zone.com.")
 //	suite.RunTests(t)
 //
+// # Provider Without ZoneLister
+//
+// If your provider doesn't implement ZoneLister, use WrapNoZoneLister:
+//
+//	provider := YourProvider{...}
+//	wrappedProvider := e2e.WrapNoZoneLister(provider)
+//	suite := e2e.NewTestSuite(wrappedProvider, "test-zone.com.")
+//	suite.RunTests(t)
+//
 // # Custom Record Construction
 //
 // Since libdns.Record is an interface, different providers may return their own
@@ -33,6 +42,7 @@ package e2e
 
 import (
 	"context"
+	"errors"
 	"net/netip"
 	"slices"
 	"strings"
@@ -42,13 +52,54 @@ import (
 	"github.com/libdns/libdns"
 )
 
-// Provider represents a libdns provider implementation for testing.
-type Provider interface {
+// RecordProvider represents a provider that implements the core record management interfaces,
+// but not ZoneLister.
+type RecordProvider interface {
 	libdns.RecordGetter
 	libdns.RecordAppender
 	libdns.RecordSetter
 	libdns.RecordDeleter
+}
+
+// Provider represents a libdns provider implementation for testing.
+type Provider interface {
+	RecordProvider
 	libdns.ZoneLister
+}
+
+// ErrNotImplemented is the sentinel error returned when a method is not implemented
+// used for skipping ZoneLister tests
+var ErrNotImplemented = errors.New("not implemented")
+
+// WrapNoZoneLister wraps a provider that doesn't implement ZoneLister,
+// adding a stub implementation that returns "not implemented" error.
+// This allows providers without zone listing capability to work with the test suite.
+func WrapNoZoneLister(provider RecordProvider) Provider {
+	return &noZoneListerWrapper{provider: provider}
+}
+
+type noZoneListerWrapper struct {
+	provider RecordProvider
+}
+
+func (w *noZoneListerWrapper) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
+	return w.provider.GetRecords(ctx, zone)
+}
+
+func (w *noZoneListerWrapper) AppendRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
+	return w.provider.AppendRecords(ctx, zone, records)
+}
+
+func (w *noZoneListerWrapper) SetRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
+	return w.provider.SetRecords(ctx, zone, records)
+}
+
+func (w *noZoneListerWrapper) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
+	return w.provider.DeleteRecords(ctx, zone, records)
+}
+
+func (w *noZoneListerWrapper) ListZones(ctx context.Context) ([]libdns.Zone, error) {
+	return nil, ErrNotImplemented
 }
 
 // TestSuite contains all the configuration needed to run e2e tests.
@@ -164,6 +215,10 @@ func (ts *TestSuite) TestListZones(t *testing.T) {
 
 	zones, err := ts.provider.ListZones(ctx)
 	if err != nil {
+		// Skip test if ZoneLister is not implemented
+		if errors.Is(err, ErrNotImplemented) {
+			t.Skip("ZoneLister not implemented by provider")
+		}
 		t.Fatalf("ListZones failed: %v", err)
 	}
 

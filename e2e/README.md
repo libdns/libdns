@@ -13,6 +13,17 @@ suite.RunTests(t)
 
 The TestSuite provides skip flags (`SkipMX`, `SkipSRV`, `SkipCAA`, `SkipNS`, `SkipSVCBHTTPS`) to exclude specific record types from testing.
 
+## Providers Without ZoneLister
+
+If your provider doesn't implement `ZoneLister`, use the `WrapNoZoneLister` helper:
+
+```go
+provider := YourProvider{...} // implements RecordGetter, RecordAppender, RecordSetter, RecordDeleter
+wrappedProvider := e2e.WrapNoZoneLister(provider)
+suite := e2e.NewTestSuite(wrappedProvider, "test-zone.com.")
+suite.RunTests(t) // ListZones test will be skipped automatically
+```
+
 ## Custom Record Types
 
 Providers may have custom record implementations with additional fields:
