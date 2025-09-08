@@ -7,7 +7,7 @@ This package provides reusable end-to-end testing utilities for libdns provider 
 ```go
 import "github.com/libdns/libdns/e2e"
 
-suite := e2e.NewTestSuite(provider, "test-zone.com.")
+suite := e2e.NewTestSuite(provider, "example.com.")
 suite.RunTests(t)
 ```
 
@@ -20,7 +20,7 @@ If your provider doesn't implement `ZoneLister`, use the `WrapNoZoneLister` help
 ```go
 provider := YourProvider{...} // implements RecordGetter, RecordAppender, RecordSetter, RecordDeleter
 wrappedProvider := e2e.WrapNoZoneLister(provider)
-suite := e2e.NewTestSuite(wrappedProvider, "test-zone.com.")
+suite := e2e.NewTestSuite(wrappedProvider, "example.com.")
 suite.RunTests(t) // ListZones test will be skipped automatically
 ```
 
@@ -37,7 +37,7 @@ type MyRecord struct {
 func (r MyRecord) RR() libdns.RR { return r.RR }
 
 // Configure custom record constructor
-suite := e2e.NewTestSuite(provider, "test-zone.com.")
+suite := e2e.NewTestSuite(provider, "example.com.")
 suite.AppendRecordFunc = func(record libdns.Record) libdns.Record {
     return MyRecord{
         RR:    record.RR(),

@@ -11,7 +11,7 @@
 //
 // # Usage
 //
-//	suite := e2e.NewTestSuite(yourProvider, "test-zone.com.")
+//	suite := e2e.NewTestSuite(yourProvider, "example.com.")
 //	suite.RunTests(t)
 //
 // # Provider Without ZoneLister
@@ -20,7 +20,7 @@
 //
 //	provider := YourProvider{...}
 //	wrappedProvider := e2e.WrapNoZoneLister(provider)
-//	suite := e2e.NewTestSuite(wrappedProvider, "test-zone.com.")
+//	suite := e2e.NewTestSuite(wrappedProvider, "example.com.")
 //	suite.RunTests(t)
 //
 // # Custom Record Construction
@@ -30,7 +30,7 @@
 // The TestSuite.AppendRecordFunc field allows you to provide a custom function
 // to create Record instances for AppendRecords tests:
 //
-//	suite := e2e.NewTestSuite(yourProvider, "test-zone.com.")
+//	suite := e2e.NewTestSuite(yourProvider, "example.com.")
 //	suite.AppendRecordFunc = func(record libdns.Record) libdns.Record {
 //		// Return your provider's specific Record implementation
 //		return yourProvider.NewRecord(record.RR())

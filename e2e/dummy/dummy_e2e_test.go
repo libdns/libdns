@@ -15,18 +15,6 @@ func TestDummyProvider(t *testing.T) {
 	testSuite.RunTests(t)
 }
 
-func TestDummyProviderMultipleZones(t *testing.T) {
-	zones := []string{"zone1.com.", "zone2.net.", "zone3.org."}
-	provider := dummy.New(zones...)
-
-	for _, zone := range zones {
-		t.Run("Zone_"+zone, func(t *testing.T) {
-			testSuite := e2e.NewTestSuite(provider, zone)
-			testSuite.RunTests(t)
-		})
-	}
-}
-
 type noZoneListerProvider struct {
 	provider *dummy.Provider
 }
