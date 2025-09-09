@@ -1,23 +1,23 @@
-package dummy_test
+package example_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/libdns/libdns"
-	"github.com/libdns/libdns/e2e"
-	"github.com/libdns/libdns/e2e/dummy"
+	"github.com/libdns/libdns/libdnstest"
+	"github.com/libdns/libdns/libdnstest/example"
 )
 
-func TestDummyProvider(t *testing.T) {
-	provider := dummy.New("example.com.")
-	testSuite := e2e.NewTestSuite(provider, "example.com.")
+func TestExampleProvider(t *testing.T) {
+	provider := example.New("example.com.")
+	testSuite := libdnstest.NewTestSuite(provider, "example.com.")
 	testSuite.RunTests(t)
 }
 
-func TestDummyProviderWithSkippedRecords(t *testing.T) {
-	provider := dummy.New("example.com.")
-	testSuite := e2e.NewTestSuite(provider, "example.com.")
+func TestExampleProviderWithSkippedRecords(t *testing.T) {
+	provider := example.New("example.com.")
+	testSuite := libdnstest.NewTestSuite(provider, "example.com.")
 
 	// Example: skip some types that some provider may not implement
 	testSuite.SkipRRTypes = map[string]bool{
@@ -34,15 +34,15 @@ func TestDummyProviderWithSkippedRecords(t *testing.T) {
 }
 
 type noZoneListerProvider struct {
-	provider *dummy.Provider
+	provider *example.Provider
 }
 
-func TestDummyProviderNoZoneLister(t *testing.T) {
-	// let's pretent we have provider that does not implement ZoneListener
-	provider := &noZoneListerProvider{provider: dummy.New("example.com.")}
+func TestExampleProviderNoZoneLister(t *testing.T) {
+	// let's pretend we have provider that does not implement ZoneLister
+	provider := &noZoneListerProvider{provider: example.New("example.com.")}
 
-	// this how how we test it:
-	suite := e2e.NewTestSuite(e2e.WrapNoZoneLister(provider), "example.com.")
+	// this is how we test it:
+	suite := libdnstest.NewTestSuite(libdnstest.WrapNoZoneLister(provider), "example.com.")
 	suite.RunTests(t)
 }
 

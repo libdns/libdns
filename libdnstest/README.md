@@ -1,17 +1,32 @@
-# libdns End-to-End Testing
+# libdns Testing Framework
 
-This package provides reusable end-to-end testing utilities for libdns provider implementations.
+This package provides reusable testing utilities for libdns provider implementations.
 
 ## Usage
 
 ```go
-import "github.com/libdns/libdns/e2e"
+import "github.com/libdns/libdns/libdnstest"
 
-suite := e2e.NewTestSuite(provider, "example.com.")
+suite := libdnstest.NewTestSuite(provider, "example.com.")
 suite.RunTests(t)
 ```
 
-The TestSuite provides skip flags (`SkipMX`, `SkipSRV`, `SkipCAA`, `SkipNS`, `SkipSVCBHTTPS`) to exclude specific record types from testing.
+The TestSuite provides a `SkipRRTypes` map to exclude specific record types from testing:
+
+```go
+suite := libdnstest.NewTestSuite(provider, "example.com.")
+suite.SkipRRTypes = map[string]bool{
+    "MX":    true,  // Skip MX record tests
+    "SRV":   true,  // Skip SRV record tests
+    "CAA":   true,  // Skip CAA record tests
+    "NS":    true,  // Skip NS record tests
+    "SVCB":  true,  // Skip SVCB record tests
+    "HTTPS": true,  // Skip HTTPS record tests
+}
+suite.RunTests(t)
+```
+
+Note: Essential record types (A, CNAME, TXT) cannot be skipped as they are used by the testing framework itself.
 
 ## Providers Without ZoneLister
 
@@ -19,8 +34,8 @@ If your provider doesn't implement `ZoneLister`, use the `WrapNoZoneLister` help
 
 ```go
 provider := YourProvider{...} // implements RecordGetter, RecordAppender, RecordSetter, RecordDeleter
-wrappedProvider := e2e.WrapNoZoneLister(provider)
-suite := e2e.NewTestSuite(wrappedProvider, "example.com.")
+wrappedProvider := libdnstest.WrapNoZoneLister(provider)
+suite := libdnstest.NewTestSuite(wrappedProvider, "example.com.")
 suite.RunTests(t) // ListZones test will be skipped automatically
 ```
 
@@ -37,7 +52,7 @@ type MyRecord struct {
 func (r MyRecord) RR() libdns.RR { return r.RR }
 
 // Configure custom record constructor
-suite := e2e.NewTestSuite(provider, "example.com.")
+suite := libdnstest.NewTestSuite(provider, "example.com.")
 suite.AppendRecordFunc = func(record libdns.Record) libdns.Record {
     return MyRecord{
         RR:    record.RR(),
@@ -72,13 +87,13 @@ The test suite automatically cleans up test records using `AttemptZoneCleanup()`
 
 **Use dedicated test zones when working with real DNS providers.**
 
-## Dummy Provider
+## Example Provider
 
 ```go
-import "github.com/libdns/libdns/e2e/dummy"
+import "github.com/libdns/libdns/libdnstest/example"
 
-provider := dummy.New("example.com.")
+provider := example.New("example.com.")
 records, err := provider.GetRecords(ctx, "example.com.")
 ```
 
-The dummy provider implements all libdns interfaces using in-memory storage. It serves as a double-entry system to ensure there is some implementation that can pass these tests. The dummy provider does not guarantee DNS compliance, but works for the currently defined tests.
+The example provider implements all libdns interfaces using in-memory storage. It serves as a double-entry system to ensure there is some implementation that can pass these tests. The example provider does not guarantee DNS compliance, but works for the currently defined tests.

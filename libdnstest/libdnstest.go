@@ -1,17 +1,17 @@
-// Package e2e provides end-to-end testing utilities for libdns provider implementations.
+// Package libdnstest provides testing utilities for libdns provider implementations.
 //
 // These tests create, modify, and delete DNS records with names like "test-append",
 // "test-set", "test-delete", and "test-lifecycle" to validate provider behavior.
 //
 // For real DNS provider implementations, use dedicated test zones since the tests
-// will modify DNS records. The dummy provider uses in-memory storage and is completely safe.
+// will modify DNS records. The example provider uses in-memory storage and is completely safe.
 //
 // Tests run sequentially (not in parallel) to avoid conflicts when testing real
 // DNS providers that interact with external services.
 //
 // # Usage
 //
-//	suite := e2e.NewTestSuite(yourProvider, "example.com.")
+//	suite := libdnstest.NewTestSuite(yourProvider, "example.com.")
 //	suite.RunTests(t)
 //
 // # Provider Without ZoneLister
@@ -19,8 +19,8 @@
 // If your provider doesn't implement ZoneLister, use WrapNoZoneLister:
 //
 //	provider := YourProvider{...}
-//	wrappedProvider := e2e.WrapNoZoneLister(provider)
-//	suite := e2e.NewTestSuite(wrappedProvider, "example.com.")
+//	wrappedProvider := libdnstest.WrapNoZoneLister(provider)
+//	suite := libdnstest.NewTestSuite(wrappedProvider, "example.com.")
 //	suite.RunTests(t)
 //
 // # Custom Record Construction
@@ -30,7 +30,7 @@
 // The TestSuite.AppendRecordFunc field allows you to provide a custom function
 // to create Record instances for AppendRecords tests:
 //
-//	suite := e2e.NewTestSuite(yourProvider, "example.com.")
+//	suite := libdnstest.NewTestSuite(yourProvider, "example.com.")
 //	suite.AppendRecordFunc = func(record libdns.Record) libdns.Record {
 //		// Return your provider's specific Record implementation
 //		return yourProvider.NewRecord(record.RR())
@@ -38,7 +38,7 @@
 //
 // For Set and Delete operations, the tests automatically retrieve existing records
 // from the provider to ensure compatibility with provider-specific Record implementations.
-package e2e
+package libdnstest
 
 import (
 	"context"

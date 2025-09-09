@@ -1,5 +1,5 @@
-// Package dummy provides an in-memory implementation of all libdns interfaces for testing.
-package dummy
+// Package example provides an in-memory implementation of all libdns interfaces for testing.
+package example
 
 import (
 	"context"
