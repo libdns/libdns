@@ -15,6 +15,24 @@ func TestDummyProvider(t *testing.T) {
 	testSuite.RunTests(t)
 }
 
+func TestDummyProviderWithSkippedRecords(t *testing.T) {
+	provider := dummy.New("example.com.")
+	testSuite := e2e.NewTestSuite(provider, "example.com.")
+
+	// Example: skip some types that some provider may not implement
+	testSuite.SkipRRTypes = map[string]bool{
+		"MX":    true,
+		"SRV":   true,
+		"HTTPS": true,
+		"SVCB":  true,
+		"CAA":   true,
+		"NS":    true,
+		"AAAA":  true,
+	}
+
+	testSuite.RunTests(t)
+}
+
 type noZoneListerProvider struct {
 	provider *dummy.Provider
 }

@@ -111,16 +111,12 @@ type TestSuite struct {
 	// if nil, the tests will use the default libdns record types.
 	// the function receives a Record and should return a Record implementation.
 	AppendRecordFunc func(record libdns.Record) libdns.Record
-	// SkipMX when true, MX records will not be included in tests.
-	SkipMX bool
-	// SkipSRV when true, SRV records will not be included in tests.
-	SkipSRV bool
-	// SkipCAA when true, CAA records will not be included in tests.
-	SkipCAA bool
-	// SkipNS when true, NS records will not be included in tests.
-	SkipNS bool
-	// SkipSVCBHTTPS when true, SVCB and HTTPS records will not be included in tests.
-	SkipSVCBHTTPS bool
+	// SkipRRTypes is a map of DNS record types to skip during testing.
+	// keys should be DNS record type strings like "MX", "SRV", "CAA", "NS", "SVCB", "HTTPS".
+	// if a type is present in the map with a true value, tests for that record type will be skipped.
+	// example: SkipRRTypes: map[string]bool{"MX": true, "SRV": true}
+	// "A", "CNAME", "TXT" record types are essential and could not be skipped
+	SkipRRTypes map[string]bool
 }
 
 // NewTestSuite creates a new test suite for a libdns provider.
@@ -135,6 +131,14 @@ func NewTestSuite(provider Provider, zone string) *TestSuite {
 
 // RunTests does zone cleanup and runs all tests
 func (ts *TestSuite) RunTests(t *testing.T) {
+	// validate that essential record types are not skipped
+	essentialTypes := []string{"TXT", "A", "CNAME"}
+	for _, rrType := range essentialTypes {
+		if ts.SkipRRTypes[rrType] {
+			t.Fatalf("Cannot skip essential record type %s - it is used in the test framework", rrType)
+		}
+	}
+
 	if err := ts.AttemptZoneCleanup(); err != nil {
 		t.Fatalf("Initial cleanup failed: %v", err)
 	}
@@ -158,31 +162,27 @@ func (ts *TestSuite) createRecord(record libdns.Record) libdns.Record {
 
 // filterRecords removes records based on skip flags.
 func (ts *TestSuite) filterRecords(records []libdns.Record) []libdns.Record {
+	if len(ts.SkipRRTypes) == 0 {
+		return records
+	}
+
 	var filtered []libdns.Record
 
 	for _, record := range records {
-		switch record.(type) {
-		case libdns.MX:
-			if ts.SkipMX {
+		rrType := record.RR().Type
+
+		// special handling for ServiceBinding which can be SVCB or HTTPS
+		if _, ok := record.(libdns.ServiceBinding); ok {
+			sb := record.(libdns.ServiceBinding)
+			if sb.Scheme == "https" && ts.SkipRRTypes["HTTPS"] {
+				continue
+			} else if sb.Scheme != "https" && ts.SkipRRTypes["SVCB"] {
 				continue
 			}
-		case libdns.SRV:
-			if ts.SkipSRV {
-				continue
-			}
-		case libdns.CAA:
-			if ts.SkipCAA {
-				continue
-			}
-		case libdns.NS:
-			if ts.SkipNS {
-				continue
-			}
-		case libdns.ServiceBinding:
-			if ts.SkipSVCBHTTPS {
-				continue
-			}
+		} else if ts.SkipRRTypes[rrType] {
+			continue
 		}
+
 		filtered = append(filtered, record)
 	}
 
@@ -215,7 +215,7 @@ func (ts *TestSuite) TestListZones(t *testing.T) {
 
 	zones, err := ts.provider.ListZones(ctx)
 	if err != nil {
-		// Skip test if ZoneLister is not implemented
+		// skip test if ZoneLister is not implemented
 		if errors.Is(err, ErrNotImplemented) {
 			t.Skip("ZoneLister not implemented by provider")
 		}
@@ -745,26 +745,15 @@ func (ts *TestSuite) logAllRecords(t *testing.T, allRecords []libdns.Record) {
 // This method is useful for cleaning up after test runs or preparing for fresh tests.
 // Deletes all record types that match the test name pattern.
 func (ts *TestSuite) AttemptZoneCleanup() error {
-	testRecordTypes := []string{"A", "AAAA", "CNAME", "TXT"}
+	// start with all possible record types we test
+	allRecordTypes := []string{"A", "AAAA", "CNAME", "TXT", "MX", "SRV", "CAA", "NS", "SVCB", "HTTPS"}
 
-	if !ts.SkipMX {
-		testRecordTypes = append(testRecordTypes, "MX")
-	}
-
-	if !ts.SkipSRV {
-		testRecordTypes = append(testRecordTypes, "SRV")
-	}
-
-	if !ts.SkipCAA {
-		testRecordTypes = append(testRecordTypes, "CAA")
-	}
-
-	if !ts.SkipNS {
-		testRecordTypes = append(testRecordTypes, "NS")
-	}
-
-	if !ts.SkipSVCBHTTPS {
-		testRecordTypes = append(testRecordTypes, "SVCB", "HTTPS")
+	// filter out skipped types
+	var testRecordTypes []string
+	for _, rrType := range allRecordTypes {
+		if !ts.SkipRRTypes[rrType] {
+			testRecordTypes = append(testRecordTypes, rrType)
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
