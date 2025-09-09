@@ -82,8 +82,14 @@ func (c CAA) RR() RR {
 // CNAME represents a CNAME-type record, which delegates
 // authority to other names.
 type CNAME struct {
-	Name   string
-	TTL    time.Duration
+	Name string
+	TTL  time.Duration
+
+	// The hostname of the target. This must always be a hostname (not an IP
+	// address, and not a CNAME), and should have a trailing dot (see the
+	// [DNSControl explanation] for more information).
+	//
+	// [DNSControl explanation]: https://docs.dnscontrol.org/language-reference/why-the-dot
 	Target string
 
 	// Optional custom data associated with the provider serving this record.
@@ -103,10 +109,19 @@ func (c CNAME) RR() RR {
 // MX represents a parsed MX-type record, which is used to specify the hostnames
 // of the servers that accept mail for a domain.
 type MX struct {
-	Name       string
-	TTL        time.Duration
-	Preference uint16 // Lower values indicate that clients should prefer this server. This field is similar to the “Priority” field in SRV records.
-	Target     string // The hostname of the mail server
+	Name string
+	TTL  time.Duration
+
+	// Lower values indicate that clients should prefer this server. This field
+	// is similar to the “Priority” field in SRV records.
+	Preference uint16
+
+	// The hostname of the mail server. This must always be a hostname (not an
+	// IP address, and not a CNAME), and should have a trailing dot (see
+	// the [DNSControl explanation] for more information).
+	//
+	// [DNSControl explanation]: https://docs.dnscontrol.org/language-reference/why-the-dot
+	Target string
 
 	// Optional custom data associated with the provider serving this record.
 	// See the package godoc for important details on this field.
@@ -140,8 +155,14 @@ func (m MX) RR() RR {
 // zone, so if you want to replace all NS records, you should add the new ones
 // before removing the old ones.
 type NS struct {
-	Name   string
-	TTL    time.Duration
+	Name string
+	TTL  time.Duration
+
+	// The hostname of the nameserver. This must always be a hostname (not an
+	// IP address, and not a CNAME), and should have a trailing dot (see
+	// the [DNSControl explanation] for more information).
+	//
+	// [DNSControl explanation]: https://docs.dnscontrol.org/language-reference/why-the-dot
 	Target string
 
 	// Optional custom data associated with the provider serving this record.
@@ -188,7 +209,13 @@ type SRV struct {
 	Priority uint16 // Lower values indicate that clients should prefer this server
 	Weight   uint16 // Higher values indicate that clients should prefer this server when choosing between targets with the same priority
 	Port     uint16 // The port on which the service is running.
-	Target   string // The hostname of the server providing the service, which must not point to a CNAME.
+
+	// The hostname of the service. This must always be a hostname (not an IP
+	// address, and not a CNAME), and should have a trailing dot (see the
+	// [DNSControl explanation] for more information).
+	//
+	// [DNSControl explanation]: https://docs.dnscontrol.org/language-reference/why-the-dot
+	Target string
 
 	// Optional custom data associated with the provider serving this record.
 	// See the package godoc for important details on this field.
