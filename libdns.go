@@ -261,6 +261,7 @@ type ZoneLister interface {
 
 // [Zone] is a generalized representation of a DNS zone.
 type Zone struct {
+	// Name is the fully qualified domain name of the zone, including the trailing dot (e.g., "example.com.")
 	Name string
 }
 

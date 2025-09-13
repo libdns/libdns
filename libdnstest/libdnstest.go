@@ -136,6 +136,12 @@ func NewTestSuite(provider Provider, zone string) *TestSuite {
 
 // RunTests does zone cleanup and runs all tests
 func (ts *TestSuite) RunTests(t *testing.T) {
+	// Validate that zone parameter has trailing dot - required for proper DNS operations
+	// and consistency with libdns conventions
+	if !strings.HasSuffix(ts.zone, ".") {
+		t.Fatalf("zone argument for NewTestSuite must have a trailing dot (e.g., 'example.com.' not 'example.com'). Got: %q", ts.zone)
+	}
+
 	// validate that essential record types are not skipped
 	essentialTypes := []string{"TXT", "A", "CNAME"}
 	for _, rrType := range essentialTypes {
