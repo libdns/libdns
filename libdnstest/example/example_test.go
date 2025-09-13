@@ -61,3 +61,12 @@ func (w *noZoneListerProvider) SetRecords(ctx context.Context, zone string, reco
 func (w *noZoneListerProvider) DeleteRecords(ctx context.Context, zone string, records []libdns.Record) ([]libdns.Record, error) {
 	return w.provider.DeleteRecords(ctx, zone, records)
 }
+
+func TestExampleProviderStrict(t *testing.T) {
+	provider := example.New("example.com.")
+	testSuite := libdnstest.NewTestSuite(provider, "example.com.")
+	// expect zone to have no records besides SOA and NS
+	// otherwise tests will fail (strict mode)
+	testSuite.ExpectEmptyZone = true
+	testSuite.RunTests(t)
+}

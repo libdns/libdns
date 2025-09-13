@@ -44,6 +44,7 @@ import (
 	"context"
 	"errors"
 	"net/netip"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -117,6 +118,10 @@ type TestSuite struct {
 	// example: SkipRRTypes: map[string]bool{"MX": true, "SRV": true}
 	// "A", "CNAME", "TXT" record types are essential and could not be skipped
 	SkipRRTypes map[string]bool
+	// ExpectEmptyZone when true, verifies that the zone only contains default records (SOA, NS)
+	// after all tests complete. The test will fail if any test record types (A, AAAA, CNAME, TXT,
+	// MX, SRV, CAA, SVCB, HTTPS) remain. This is useful to confirm complete cleanup in test zones.
+	ExpectEmptyZone bool
 }
 
 // NewTestSuite creates a new test suite for a libdns provider.
@@ -148,7 +153,17 @@ func (ts *TestSuite) RunTests(t *testing.T) {
 	t.Run("AppendRecords", ts.TestAppendRecords)
 	t.Run("SetRecords", ts.TestSetRecords)
 	t.Run("DeleteRecords", ts.TestDeleteRecords)
+
+	// If ExpectEmptyZone is true, verify the zone is clean after all tests
+	if ts.ExpectEmptyZone {
+		ctx, cancel := context.WithTimeout(context.Background(), ts.Timeout)
+		defer cancel()
+		ts.verifyZoneClean(t, ctx)
+	}
 }
+
+// testRecordTypes defines all DNS record types that the test suite creates and manages.
+var testRecordTypes = []string{"A", "AAAA", "CNAME", "TXT", "MX", "SRV", "CAA", "NS", "SVCB", "HTTPS"}
 
 // createRecord creates a Record using the AppendRecordFunc if provided,
 // or falling back to the original record.
@@ -714,7 +729,6 @@ func (ts *TestSuite) verifyRecordsNotExist(t *testing.T, ctx context.Context, un
 		t.Fatalf("GetRecords (verify not exist) failed: %v", err)
 	}
 
-	foundAny := false
 	for _, unexpected := range unexpectedRecords {
 		unexpectedRR := unexpected.RR()
 
@@ -722,13 +736,34 @@ func (ts *TestSuite) verifyRecordsNotExist(t *testing.T, ctx context.Context, un
 			actualRR := actual.RR()
 			if ts.recordsMatch(t, unexpectedRR, actualRR) {
 				t.Errorf("Unexpected record found: %s %s %s", actualRR.Name, actualRR.Type, actualRR.Data)
-				foundAny = true
 			}
 		}
 	}
+}
 
-	if foundAny {
-		ts.logAllRecords(t, allRecords)
+// verifyZoneClean checks that the zone only contains default/expected records.
+// By default, zones typically only contain SOA and NS records.
+// This verifies that no test record types exist in the zone (NS records are allowed as they're zone defaults).
+func (ts *TestSuite) verifyZoneClean(t *testing.T, ctx context.Context) {
+	allRecords, err := ts.provider.GetRecords(ctx, ts.zone)
+	if err != nil {
+		t.Fatalf("GetRecords (verify zone clean) failed: %v", err)
+	}
+
+	var unexpectedRecords []libdns.RR
+	for _, record := range allRecords {
+		rr := record.RR()
+		// check if this is one of the record types we use in tests, besides NS
+		if rr.Type != "NS" && slices.Contains(testRecordTypes, rr.Type) {
+			unexpectedRecords = append(unexpectedRecords, rr)
+		}
+	}
+
+	if len(unexpectedRecords) > 0 {
+		t.Errorf("Found unexpected records in zone that should be clean:")
+		for _, rr := range unexpectedRecords {
+			t.Errorf("  - %s %s %s %s", rr.Name, rr.TTL, rr.Type, rr.Data)
+		}
 	}
 }
 
@@ -745,14 +780,11 @@ func (ts *TestSuite) logAllRecords(t *testing.T, allRecords []libdns.Record) {
 // This method is useful for cleaning up after test runs or preparing for fresh tests.
 // Deletes all record types that match the test name pattern.
 func (ts *TestSuite) AttemptZoneCleanup() error {
-	// start with all possible record types we test
-	allRecordTypes := []string{"A", "AAAA", "CNAME", "TXT", "MX", "SRV", "CAA", "NS", "SVCB", "HTTPS"}
-
 	// filter out skipped types
-	var testRecordTypes []string
-	for _, rrType := range allRecordTypes {
+	var activeRecordTypes []string
+	for _, rrType := range testRecordTypes {
 		if !ts.SkipRRTypes[rrType] {
-			testRecordTypes = append(testRecordTypes, rrType)
+			activeRecordTypes = append(activeRecordTypes, rrType)
 		}
 	}
 
@@ -767,7 +799,15 @@ func (ts *TestSuite) AttemptZoneCleanup() error {
 	var testRecords []libdns.Record
 	for _, record := range allRecords {
 		rr := record.RR()
-		if strings.HasPrefix(rr.Name, "test-") && slices.Contains(testRecordTypes, rr.Type) {
+		// check if this is a test record
+		// for SRV/SVCB: strip up to two _xxx. prefixes then check for test-
+		nameToCheck := rr.Name
+		if rr.Type == "SRV" || rr.Type == "SVCB" {
+			// Remove up to two "_xxx." prefixes
+			nameToCheck = regexp.MustCompile(`^(_[^.]+\.){0,2}`).ReplaceAllString(nameToCheck, "")
+		}
+
+		if strings.HasPrefix(nameToCheck, "test-") && slices.Contains(activeRecordTypes, rr.Type) {
 			testRecords = append(testRecords, record)
 		}
 	}
