@@ -303,6 +303,11 @@ func AbsoluteName(name, zone string) string {
 	if zone == "" {
 		return strings.Trim(name, ".")
 	}
+	if !strings.HasSuffix(zone, ".") {
+		// "zone" should always be a FQDN (with a trailing dot), but we don't
+		// enforce this anywhere, so we'll go ahead and correct it if needed.
+		zone += "."
+	}
 	if name == "" || name == "@" {
 		return zone
 	}
