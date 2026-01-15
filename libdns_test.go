@@ -106,8 +106,8 @@ func TestAbsoluteName(t *testing.T) {
 	}{
 		{
 			name:   "",
-			zone:   "example.com",
-			expect: "example.com",
+			zone:   "example.com.",
+			expect: "example.com.",
 		},
 		{
 			name:   "@",
