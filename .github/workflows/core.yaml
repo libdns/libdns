@@ -1,0 +1,30 @@
+name: Test the core libdns functionality
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test with the oldest and newest supported Go versions; if libdns works
+        # with these versions, it's incredibly unlikely that it won't work with
+        # all the intermediate versions.
+        go-version: ["1.23", "stable"]
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Test all packages
+      run: >
+        find . -name go.mod -execdir sh -c '
+          go test -v ./... ||
+          kill $PPID
+        ' \;
