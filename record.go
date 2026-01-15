@@ -122,27 +122,36 @@ func (r RR) RR() RR { return r }
 //
 // Callers will typically want to type-assert (or use a type switch on)
 // the return value to extract values or manipulate it.
-func (r RR) Parse() (Record, error) {
+//
+// In the event of a parsing error, the [RR] will be returned as-is (unparsed),
+// without indicating an error. This means that “err” will always be nil (the
+// current signature is maintained for backwards compatibility).
+func (r RR) Parse() (record Record, err error) {
 	switch r.Type {
 	case "A", "AAAA":
-		return r.toAddress()
+		record, err = r.toAddress()
 	case "CAA":
-		return r.toCAA()
+		record, err = r.toCAA()
 	case "CNAME":
-		return r.toCNAME()
+		record, err = r.toCNAME()
 	case "HTTPS", "SVCB":
-		return r.toServiceBinding()
+		record, err = r.toServiceBinding()
 	case "MX":
-		return r.toMX()
+		record, err = r.toMX()
 	case "NS":
-		return r.toNS()
+		record, err = r.toNS()
 	case "SRV":
-		return r.toSRV()
+		record, err = r.toSRV()
 	case "TXT":
-		return r.toTXT()
+		record, err = r.toTXT()
 	default:
-		return r, nil
+		record = r
 	}
+
+	if err != nil {
+		record, err = r, nil
+	}
+	return
 }
 
 func (r RR) toAddress() (Address, error) {
