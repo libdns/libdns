@@ -17,6 +17,9 @@ import (
 // data field, these record types are combined for ease of
 // use in Go programs, which supports both address sizes,
 // to help simplify code.
+//
+// See the documentation for [RR] for details on the “Name” and “TTL”
+// fields.
 type Address struct {
 	Name string
 	TTL  time.Duration
