@@ -111,6 +111,10 @@ type RR struct {
 	// Implementations are not expected to support RFC 3597 “\#” escape
 	// sequences, but may choose to do so if they wish.
 	Data string `json:"data"`
+
+	// If parsing the RR into a more specific type failed, this field will
+	// contain the error. If parsing was successful, this field will be nil.
+	Error error `json:"error,omitempty"`
 }
 
 // RR returns itself. This may be the case when trying to parse an RR type
@@ -122,27 +126,39 @@ func (r RR) RR() RR { return r }
 //
 // Callers will typically want to type-assert (or use a type switch on)
 // the return value to extract values or manipulate it.
-func (r RR) Parse() (Record, error) {
+//
+// In the event of a parsing error, the [RR] will be returned as-is (unparsed),
+// with the error stored in the [RR.Error] field. This means that “err” will
+// always be nil (the current signature is maintained for backwards
+// compatibility).
+func (r RR) Parse() (record Record, err error) {
 	switch r.Type {
 	case "A", "AAAA":
-		return r.toAddress()
+		record, err = r.toAddress()
 	case "CAA":
-		return r.toCAA()
+		record, err = r.toCAA()
 	case "CNAME":
-		return r.toCNAME()
+		record, err = r.toCNAME()
 	case "HTTPS", "SVCB":
-		return r.toServiceBinding()
+		record, err = r.toServiceBinding()
 	case "MX":
-		return r.toMX()
+		record, err = r.toMX()
 	case "NS":
-		return r.toNS()
+		record, err = r.toNS()
 	case "SRV":
-		return r.toSRV()
+		record, err = r.toSRV()
 	case "TXT":
-		return r.toTXT()
+		record, err = r.toTXT()
 	default:
-		return r, nil
+		record = r
 	}
+
+	if err != nil {
+		r.Error = err
+		record, err = r, nil
+	}
+
+	return
 }
 
 func (r RR) toAddress() (Address, error) {
