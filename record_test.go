@@ -674,3 +674,51 @@ func TestRRDataZeroValues(t *testing.T) {
 		}
 	}
 }
+
+func TestRRParseErrorField(t *testing.T) {
+	for _, test := range []RR{
+		{
+			Name: "example.com",
+			TTL:  1 * time.Hour,
+			Type: "A",
+			Data: "invalid-ip-address",
+		},
+		{
+			Name: "example.com",
+			TTL:  1 * time.Hour,
+			Type: "CAA",
+			Data: "invalid-caa-data",
+		},
+		{
+			Name: "example.com",
+			TTL:  1 * time.Hour,
+			Type: "SVCB",
+			Data: "\"invalid-svcb-data",
+		},
+		{
+			Name: "example.com",
+			TTL:  1 * time.Hour,
+			Type: "MX",
+			Data: "not-a-number target.example.com.",
+		},
+		{
+			Name: "example.com",
+			TTL:  1 * time.Hour,
+			Type: "SRV",
+			Data: "invalid srv data",
+		},
+	} {
+		parsed, err := test.Parse()
+		if err != nil {
+			t.Fatalf("Parse() should never return an error, got: %v", err)
+		}
+
+		if parsedRR, ok := parsed.(RR); ok {
+			if parsedRR.Error == nil {
+				t.Fatalf("Expected parsing error to be stored in RR.Error, but it was nil.")
+			}
+		} else {
+			t.Fatalf("Expected parsed record to be of type RR on parsing failure, got: %T", parsed)
+		}
+	}
+}
