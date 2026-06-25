@@ -505,6 +505,10 @@ func TestParseSvcParams(t *testing.T) {
 				"escapes": {"abc"},
 			},
 		},
+		{
+			input:     `illegal=\©`,
+			shouldErr: true,
+		},
 	} {
 		actual, err := ParseSvcParams(test.input)
 		if err != nil && !test.shouldErr {

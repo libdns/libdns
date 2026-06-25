@@ -533,7 +533,7 @@ func ParseSvcParams(input string) (SvcParams, error) {
 					sb.WriteRune(rune(decOctet))
 					escape = 0
 					continue
-				} else if (ch < 0x21 || ch > 0x2F) && (ch < 0x3A && ch > 0x7E) {
+				} else if ch < 0x21 || 0x7E < ch {
 					return nil, fmt.Errorf("illegal escape sequence %s", rawVal[escape:i])
 				}
 			}
